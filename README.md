@@ -11,7 +11,7 @@
 python -m venv .venv
 .venv\Scripts\activate
 ```
-2️⃣ 安裝套件
+### 2️⃣ 安裝套件
 
 ```bash
 pip install -r requirements.txt
