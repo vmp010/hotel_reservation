@@ -13,9 +13,13 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto">
-            <li class="nav-item"><a class="nav-link active" href="#">首頁</a></li>
+            <li class="nav-item">
+                <NuxtLink class="nav-link" to="/">首頁</NuxtLink>
+            </li>
             <li class="nav-item"><a class="nav-link" href="#">房型瀏覽</a></li>
-            <li class="nav-item"><a class="nav-link" href="#">登入</a></li>
+            <li class="nav-item">
+                <NuxtLink class="nav-link" to="/login">登入</NuxtLink>
+            </li>
             <li class="nav-item"><a class="nav-link" href="#">註冊</a></li>
           </ul>
         </div>

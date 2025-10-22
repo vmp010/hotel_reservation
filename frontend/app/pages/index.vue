@@ -1,4 +1,5 @@
 <template>
+    <floder></floder>
     <roomView></roomView>
 
 </template>
