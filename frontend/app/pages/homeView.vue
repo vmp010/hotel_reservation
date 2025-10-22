@@ -1,5 +1,5 @@
 <template>
-    <roomView></roomView>
+    homeView
 
 </template>
 <script setup>

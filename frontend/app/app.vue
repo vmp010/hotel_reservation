@@ -1,6 +1,6 @@
 <template>
     <NuxtLayout>
       <floder></floder>
-      <!-- <NuxtPage /> -->
+      <NuxtPage />
     </NuxtLayout>
 </template>
