@@ -56,9 +56,6 @@ services:
       - backend
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend:/app     # 同步本地 frontend 資料夾
-    command: npm run dev -- --host 0.0.0.0 --port 3000
 
 volumes:
   db_data:
