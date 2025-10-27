@@ -1,5 +1,5 @@
 <template>
-    <header class="bg-light text-center py-5">
+    <header class="bg-light text-center py-5" id="#">
       <div class="container">
         <h1 class="display-5 fw-bold">歡迎來到旅遊訂房平台</h1>
         <p class="lead text-muted">
