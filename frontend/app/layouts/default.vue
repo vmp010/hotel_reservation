@@ -17,11 +17,18 @@
             <!-- <li class="nav-item">
                 <NuxtLink class="nav-link" to="/">首頁</NuxtLink>
             </li> -->
-            <li class="nav-item"><a class="nav-link" href="#">房型瀏覽</a></li>
             <li class="nav-item">
-                <NuxtLink class="nav-link" to="/login">登入</NuxtLink>
+              <NuxtLink class="nav-link" to="/homeView">房型瀏覽</NuxtLink>
             </li>
-            <li class="nav-item"><a class="nav-link" href="#">註冊</a></li>
+            <li class="nav-item">
+              <NuxtLink class="nav-link" to="/login">登入</NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink class="nav-link" to="/register">註冊</NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink class="nav-link" to="/about">人物</NuxtLink>
+            </li>
           </ul>
         </div>
       </div>

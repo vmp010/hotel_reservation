@@ -1,6 +1,6 @@
 <template>
     <floder></floder>
-    <roomView></roomView>
+    <indexView></indexView>
 
 </template>
 <script setup>
