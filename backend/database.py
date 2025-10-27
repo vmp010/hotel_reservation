@@ -1,11 +1,14 @@
-from sqlmodel import Field, SQLModel, create_engine, Session
+from sqlalchemy import  create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+import os
 
-class Room(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    name: str
-    price: float
-    available: bool 
+URL_DATABASE = os.getenv(
+    "DATABASE_URL",
+    "mysql+pymysql://user:password@db/hotel_reservation"
+)
+engine = create_engine(URL_DATABASE)
 
-DATABASE_URL = "sqlite:///./rooms.db"
-engine=create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SQLModel.metadata.create_all(engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base = declarative_base()

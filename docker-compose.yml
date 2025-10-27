@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: hotel_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: hotel_reservation
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./backend   # build context 指向 backend
+      dockerfile: Dockerfile
+    container_name: hotel_backend
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app     # 同步本地 backend 資料夾
+    environment:
+      DATABASE_URL: mysql+pymysql://user:password@db:3306/hotel_reservation
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+
+volumes:
+  db_data:
