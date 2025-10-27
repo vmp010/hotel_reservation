@@ -5,7 +5,7 @@ import os
 
 URL_DATABASE = os.getenv(
     "DATABASE_URL",
-    "mysql+pymysql://user:password@db/hotel_reservation"
+    "mysql+pymysql://admin:admin123@db:3306/hotel_reservation"
 )
 engine = create_engine(URL_DATABASE)
 
