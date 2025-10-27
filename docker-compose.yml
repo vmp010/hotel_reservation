@@ -8,10 +8,11 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: hotel_reservation
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin123
+     
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
@@ -19,6 +20,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: hotel_phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
   backend:
     build:
       context: ./backend   # build context 指向 backend
@@ -31,7 +44,7 @@ services:
     volumes:
       - ./backend:/app     # 同步本地 backend 資料夾
     environment:
-      DATABASE_URL: mysql+pymysql://user:password@db:3306/hotel_reservation
+      DATABASE_URL: mysql+pymysql://admin:admin123@db:3306/hotel_reservation
     command: uvicorn main:app --host 0.0.0.0 --port 8000
 
 volumes:
