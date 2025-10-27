@@ -1,0 +1,16 @@
+FROM node:22-slim
+
+# 2️⃣ 設定工作目錄
+WORKDIR /app
+
+# 3️⃣ 複製 package.json & package-lock.json (或 pnpm-lock.yaml / yarn.lock)
+COPY package*.json ./
+
+# 4️⃣ 安裝依賴
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
