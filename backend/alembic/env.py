@@ -1,13 +1,26 @@
 from logging.config import fileConfig
+import os
+import sys
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
 
+# 將父目錄加入 Python 路徑，以便導入 models 和 database
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+# 導入你的 models 和 database
+import models
+from database import Base
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# 從環境變數讀取資料庫 URL（Docker 環境）
+database_url = os.getenv("DATABASE_URL", "mysql+pymysql://admin:admin123@localhost:3307/hotel_reservation")
+config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -16,9 +29,8 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+# 重要：指向你的 Base.metadata，Alembic 才能偵測 model 變更
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

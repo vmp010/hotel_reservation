@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String
 from database import Base
 
 class User(Base):
@@ -8,7 +8,7 @@ class User(Base):
     username = Column(String(50), unique=True, index=True)
     email = Column(String(100), unique=True, index=True)
     password = Column(String(100))
-    hotel_id = Column(Integer)
+    hotel_id = Column(Integer, ForeignKey("hotel_rooms.id"))
 
 class hotel(Base):
     __tablename__ = "hotel_rooms"
@@ -18,4 +18,4 @@ class hotel(Base):
     location = Column(String(100),nullable=False)
     room_type = Column(String(50))
     price = Column(Integer)
-    user_id = Column(Integer)
+    user_id = Column(Integer,ForeignKey("users.id"))

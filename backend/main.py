@@ -21,7 +21,8 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-models.Base.metadata.create_all(bind=engine)
+# 註解掉 create_all，改用 Alembic 管理資料庫結構
+# models.Base.metadata.create_all(bind=engine)
 
 class HotelRoomBase(BaseModel):
     room_number: str

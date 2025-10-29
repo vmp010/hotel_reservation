@@ -9,6 +9,6 @@ URL_DATABASE = os.getenv(
 )
 engine = create_engine(URL_DATABASE)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=True, bind=engine)
 
 Base = declarative_base()
