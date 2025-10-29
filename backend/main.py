@@ -46,6 +46,23 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True
 
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class LoginResponse(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+    hotel_id: int | None = None
+    message: str
+
+    class Config:
+        from_attributes = True
+
+
 def get_db():
     db = SessionLocal()
     try:
@@ -79,9 +96,34 @@ async def create_user(user: UserCreate, db: db_dependency):
     db.commit()
     db.refresh(db_user)
     return db_user
-   
 
 
+@app.post("/login/", response_model=LoginResponse)
+async def login(user: UserLogin, db: db_dependency):
+    # 查找使用者（使用 email）
+    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+    
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Email 或密碼錯誤"
+        )
+    
+    # 驗證密碼
+    if not bcrypt.checkpw(user.password.encode("utf-8"), db_user.password.encode("utf-8")):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Email 或密碼錯誤"
+        )
+    
+    # 登入成功，回傳使用者資訊
+    return LoginResponse(
+        id=db_user.id,
+        username=db_user.username,
+        email=db_user.email,
+        hotel_id=db_user.hotel_id,
+        message="登入成功"
+    )
 
 
 @app.get("/")
