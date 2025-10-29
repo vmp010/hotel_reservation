@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException, Depends,status
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Depends, status
+from pydantic import BaseModel, EmailStr
 from typing import Annotated
 import models
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
+import bcrypt
 
 app = FastAPI()
 
@@ -28,11 +29,21 @@ class HotelRoomBase(BaseModel):
     price: int
     user_id: int
 
-class UserBase(BaseModel):
+class UserCreate(BaseModel):
     username: str
-    email: str
+    email: EmailStr
     password: str
-    hotel_id: int
+    hotel_id: int | None = None
+
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+    hotel_id: int | None = None
+
+    class Config:
+        from_attributes = True
 
 def get_db():
     db = SessionLocal()
@@ -43,10 +54,25 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
-@app.post("/users/", status_code=status.HTTP_201_CREATED)
-async def create_user(user: UserBase, db: db_dependency):
+@app.post("/users/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def create_user(user: UserCreate, db: db_dependency):
+    # Check for duplicate username or email
+    existing_user = (
+        db.query(models.User)
+        .filter((models.User.username == user.username) | (models.User.email == user.email))
+        .first()
+    )
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username or email already registered")
+
+    # Hash password using bcrypt
+    hashed_password = bcrypt.hashpw(user.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
     db_user = models.User(
-      **user.dict()
+        username=user.username,
+        email=user.email,
+        password=hashed_password,
+        hotel_id=user.hotel_id,
     )
     db.add(db_user)
     db.commit()
