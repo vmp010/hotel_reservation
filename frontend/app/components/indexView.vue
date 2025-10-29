@@ -10,7 +10,9 @@
                 <h5 class="card-title">{{ room.name }}</h5>
                 <p class="card-text text-muted">{{ room.location }}</p>
                 <p class="fw-bold text-primary">$ {{ room.price }} / 晚</p>
-                <a href="#" class="btn btn-outline-primary w-100">查看詳情</a>
+                <NuxtLink :to="`/rooms/${room.id}`" class="btn btn-outline-primary">
+                  查看詳情
+                </NuxtLink>
               </div>
             </div>
           </div>
