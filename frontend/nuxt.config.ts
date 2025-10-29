@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  css: ['bootstrap/dist/css/bootstrap.min.css'],
+  css: ['bootstrap/dist/css/bootstrap.min.css','bootstrap-icons/font/bootstrap-icons.css'],
   runtimeConfig: {
     public: {
       // Default API base; override at runtime via env var NUXT_PUBLIC_API_BASE
