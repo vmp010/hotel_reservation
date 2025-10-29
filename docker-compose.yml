@@ -45,17 +45,26 @@ services:
       - ./backend:/app     # 同步本地 backend 資料夾
     environment:
       DATABASE_URL: mysql+pymysql://admin:admin123@db:3306/hotel_reservation
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
     build:
       context: ./frontend   # build context 指向 frontend
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
     container_name: hotel_frontend
+    restart: always
     depends_on:
       - backend
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app    # 同步本地 frontend 資料夾
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+    environment:
+      - NUTRO_PORT=3000
+      - NUTRO_HOST=0.0.0.0
 
 volumes:
   db_data:

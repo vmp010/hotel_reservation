@@ -4,9 +4,22 @@ from typing import Annotated
 import models
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
-
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
 models.Base.metadata.create_all(bind=engine)
 
 class HotelRoomBase(BaseModel):
@@ -37,6 +50,8 @@ async def create_user(user: UserBase, db: db_dependency):
     )
     db.add(db_user)
     db.commit()
+    db.refresh(db_user)
+    return db_user
    
 
 
