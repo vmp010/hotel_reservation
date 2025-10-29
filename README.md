@@ -6,12 +6,12 @@
 
 ##啟動方式
 
-###第一次啟動
+### 第一次啟動
 ```bash
 docker compose up -d --build
 ```
 
-###後續啟動
+### 後續啟動
 
 ```bash
 docker compose up -d
