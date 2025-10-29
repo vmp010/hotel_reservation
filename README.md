@@ -4,29 +4,16 @@
 
 ---
 
-##  🚀前端啟動方式
+##啟動方式
 
-### 1️⃣ npm install (需安裝node.js)
+###第一次啟動
 ```bash
-npm install
-```
-### 2️⃣ 啟動server
-``` bash
-npm run dev
+docker compose up -d --build
 ```
 
-## 🚀 後端啟動方式
-
-### 1️⃣ 建立虛擬環境
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-```
-### 2️⃣ 安裝套件
+###後續啟動
 
 ```bash
-pip install -r requirements.txt
+docker compose up -d
 ```
-
-
 
