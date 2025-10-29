@@ -1,12 +1,13 @@
 <template>
   <div class="container py-5">
+    <NuxtLink to="/" class="btn btn-secondary mt-3"><i class="bi bi-arrow-left">返回</i></NuxtLink>
     <h1>{{ room.name }}</h1>
     <img :src="room.image" class="img-fluid rounded mb-3" alt="">
     <p>地點：{{ room.location }}</p>
     <p>價格：${{ room.price }} / 晚</p>
     <p>地點：{{ room.location }}</p>
 
-    <NuxtLink to="/" class="btn btn-secondary mt-3">返回首頁</NuxtLink>
+    
   </div>
 </template>
 
