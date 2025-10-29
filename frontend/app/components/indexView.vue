@@ -1,7 +1,7 @@
 <template>
     <section class="py-5">
       <div class="container">
-        <h2 class="mb-4 fw-bold">熱門房型</h2>
+        <h2 class="mb-4 fw-bold">為您推薦</h2>
         <div class="row g-4">
           <div class="col-md-4" v-for="room in rooms" :key="room.id">
             <div class="card shadow-sm">

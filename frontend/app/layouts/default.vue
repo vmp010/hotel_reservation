@@ -17,9 +17,9 @@
             <!-- <li class="nav-item">
                 <NuxtLink class="nav-link" to="/">首頁</NuxtLink>
             </li> -->
-            <li class="nav-item">
+            <!-- <li class="nav-item">
               <NuxtLink class="nav-link" to="/homeView">房型瀏覽</NuxtLink>
-            </li>
+            </li> -->
             <li class="nav-item">
               <NuxtLink class="nav-link" to="/login">登入</NuxtLink>
             </li>

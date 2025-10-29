@@ -4,13 +4,14 @@
       <h3 class="text-center mb-4 text-primary">註冊帳號</h3>
       <form @submit.prevent="handleregister">
         <div class="mb-3">
-          <label class="form-label">電子郵件</label>
-          <input v-model="email" type="email" class="form-control" placeholder="輸入 Email" required>
-        </div>
-        <div class="mb-3">
           <label class="form-label">使用者名稱</label>
           <input v-model="username" type="text" class="form-control" placeholder="輸入使用者名稱" required>
         </div>
+        <div class="mb-3">
+          <label class="form-label">電子郵件</label>
+          <input v-model="email" type="email" class="form-control" placeholder="輸入 Email" required>
+        </div>
+        
         <div class="mb-3">
           <label class="form-label">密碼</label>
           <input v-model="password" type="password" class="form-control" placeholder="輸入密碼" required>
