@@ -20,13 +20,13 @@
             <!-- <li class="nav-item">
               <NuxtLink class="nav-link" to="/homeView">房型瀏覽</NuxtLink>
             </li> -->
-            <li class="nav-item">
-              <NuxtLink class="nav-link" to="/login">登入</NuxtLink>
+            <li class="nav-item" v-if="!useState('loggedIn').value">
+              <NuxtLink class="nav-link" to="/login" >登入</NuxtLink>
             </li>
-            <li class="nav-item">
+            <li class="nav-item" v-if="!useState('loggedIn').value">
               <NuxtLink class="nav-link" to="/register">註冊</NuxtLink>
             </li>
-            <li class="nav-item">
+            <li class="nav-item" v-if="useState('loggedIn').value">
               <NuxtLink class="nav-link" to="/about">人物</NuxtLink>
             </li>
           </ul>
@@ -41,3 +41,8 @@
       <a href="#" ><i class="bi bi-arrow-up-circle h1 position-absolute end-0 me-3 top-50 translate-middle-y"></i></a>
 </footer>
 </template>
+<script setup>
+// import { useState } from 'vue'
+const loggedIn = useState('loggedIn', () => false)
+
+</script>

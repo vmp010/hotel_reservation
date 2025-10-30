@@ -3,6 +3,7 @@
     <img src="/homeView_I_want.png"></img>
 </template>
 <script setup>
+// 中介軟體：auth.ts 判斷是否登入
 definePageMeta({
   middleware: 'auth'
 })
