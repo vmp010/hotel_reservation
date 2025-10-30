@@ -3,7 +3,9 @@
     <img src="/homeView_I_want.png"></img>
 </template>
 <script setup>
-
+definePageMeta({
+  middleware: 'auth'
+})
 </script>
 <style scoped>
 img{

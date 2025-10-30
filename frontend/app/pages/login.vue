@@ -36,6 +36,9 @@ const password = ref('')
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
+// loggedIn 用來判斷是否登入，才可能進去開始找房
+const loggedIn = useState('loggedIn')
+
 
 const handleLogin = async () => {
   error.value = ''
@@ -47,6 +50,7 @@ const handleLogin = async () => {
   }
   
   loading.value = true
+  loggedIn.value = true
   
   try {
     const res = await $fetch(`${config.public.apiBase}/login/`, {
