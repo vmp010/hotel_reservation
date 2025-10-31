@@ -152,6 +152,13 @@ def read_hotel(hotel_id: int, db: db_dependency):
         raise HTTPException(status_code=404, detail="Hotel not found")
     return hotel
 
+@app.get("/index/")
+def read_index(hotel_id: int, db: db_dependency, limit: int = 3):
+    hotel = db.query(models.Hotel).filter(models.Hotel.id == hotel_id).first()
+    if not hotel:
+        raise HTTPException(status_code=404, detail="Hotel not found")
+    return hotel
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"} 
