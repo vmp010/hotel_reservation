@@ -42,44 +42,7 @@ docker compose up -d
 - 密碼：`admin123`
 - 資料庫名稱：`hotel_reservation`
 
----
 
-## 🗄️ 資料庫遷移 (Alembic)
-
-本專案使用 Alembic 進行資料庫版本控制。
-
-### 首次設定（新成員）
-```bash
-docker exec -it hotel_backend alembic upgrade head
-```
-
-### 修改資料庫結構
-1. 修改 `backend/models.py`
-2. 產生遷移：
-   ```bash
-   docker exec -it hotel_backend alembic revision --autogenerate -m "描述變更"
-   ```
-3. 套用遷移：
-   ```bash
-   docker exec -it hotel_backend alembic upgrade head
-   ```
-4. 提交變更：
-   ```bash
-   git add backend/models.py backend/alembic/versions/*.py
-   git commit -m "Database: 描述變更"
-   git push
-   ```
-
-### 同步他人的資料庫變更
-```bash
-git pull
-docker compose restart backend
-docker exec -it hotel_backend alembic upgrade head
-```
-
-**詳細說明**：查看 [ALEMBIC_SETUP.md](ALEMBIC_SETUP.md)
-
----
 
 ## 📁 專案結構
 
@@ -194,26 +157,7 @@ docker exec -it hotel_backend alembic upgrade head
 
 ---
 
-## 🤝 貢獻指南
 
-1. Fork 本專案
-2. 建立功能分支：`git checkout -b feature/new-feature`
-3. 提交變更：`git commit -m "Add new feature"`
-4. 推送到分支：`git push origin feature/new-feature`
-5. 建立 Pull Request
-
-**資料庫變更**：請務必使用 Alembic 遷移，參考 [ALEMBIC_SETUP.md](ALEMBIC_SETUP.md)
-
----
-
-## 📄 授權
-
-MIT License
-
----
-
-## 👥 維護者
-
-[@vmp010](https://github.com/vmp010)
+*
 
 

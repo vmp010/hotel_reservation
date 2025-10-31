@@ -24,11 +24,13 @@ app.add_middleware(
 # 註解掉 create_all，改用 Alembic 管理資料庫結構
 # models.Base.metadata.create_all(bind=engine)
 
-class HotelRoomBase(BaseModel):
-    room_number: str
+class HotelRoomCreate(BaseModel):
+    hotel_name: str
+    location: str
     room_type: str
-    price: int
-    user_id: int
+    price: int | None = None
+
+
 
 class UserCreate(BaseModel):
     username: str
@@ -125,6 +127,30 @@ async def login(user: UserLogin, db: db_dependency):
         message="登入成功"
     )
 
+@app.post("/create_hotel/", response_model=HotelRoomCreate, status_code=status.HTTP_201_CREATED)
+async def create_room(hotel: HotelRoomCreate, db: db_dependency):
+    db_room = models.Hotel(
+        hotel_name=hotel.hotel_name,
+        location=hotel.location,
+        room_type=hotel.room_type,
+        price=hotel.price
+    )
+    db.add(db_room)
+    db.commit()
+    db.refresh(db_room)
+    return db_room
+
+@app.get("/hotels/")
+def read_hotels(db: db_dependency):
+    hotels = db.query(models.Hotel).all()
+    return hotels
+
+@app.get("/hotels/{hotel_id}")
+def read_hotel(hotel_id: int, db: db_dependency):
+    hotel = db.query(models.Hotel).filter(models.Hotel.id == hotel_id).first()
+    if not hotel:
+        raise HTTPException(status_code=404, detail="Hotel not found")
+    return hotel
 
 @app.get("/")
 def read_root():
