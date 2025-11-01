@@ -29,6 +29,9 @@
             <li class="nav-item" v-if="useState('loggedIn').value">
               <NuxtLink class="nav-link" to="/about">人物</NuxtLink>
             </li>
+            <li class="nav-item" v-if="useState('loggedIn').value">
+              <button class="nav-link" @click="logout">登出</button>
+            </li>
           </ul>
         </div>
       </div>
@@ -44,5 +47,7 @@
 <script setup>
 // import { useState } from 'vue'
 const loggedIn = useState('loggedIn', () => false)
-
+function logout() {
+  loggedIn.value = false
+}
 </script>
