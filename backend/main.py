@@ -159,6 +159,15 @@ def read_index( db: db_dependency, limit: int = 3):
         raise HTTPException(status_code=404, detail="Hotel not found")
     return hotels
 
+@app.get("/delHotel/{hotel_id}")
+def delete_hotel(hotel_id: int, db: db_dependency):
+    hotel = db.query(models.Hotel).filter(models.Hotel.id == hotel_id).first()
+    if not hotel:
+        raise HTTPException(status_code=404, detail="Hotel not found")
+    db.delete(hotel)
+    db.commit()
+    return {"detail": "Hotel deleted successfully"}
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"} 
