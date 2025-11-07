@@ -104,40 +104,6 @@ docker compose up -d --build
 
 ---
 
-## 🔧 故障排除
-
-### 問題：前端無法連接後端
-**檢查**：
-1. 確認後端容器運行：`docker ps`
-2. 檢查後端日誌：`docker logs hotel_backend`
-3. 確認 CORS 設定正確（`backend/main.py` 的 origins）
-
-### 問題：資料庫連線失敗
-**解決**：
-```bash
-# 重啟資料庫
-docker compose restart db
-
-# 等待健康檢查通過，然後重啟後端
-docker compose restart backend
-```
-
-### 問題：資料表不存在
-**解決**：
-```bash
-# 套用所有遷移
-docker exec -it hotel_backend alembic upgrade head
-```
-
-### 問題：完全重置（開發環境）
-```bash
-docker compose down
-docker volume rm hotel_reservation_db_data
-docker compose up -d --build
-docker exec -it hotel_backend alembic upgrade head
-```
-
----
 
 ## 📝 功能特點
 
