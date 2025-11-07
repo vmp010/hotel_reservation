@@ -5,8 +5,8 @@ from database import Base
 user_hotel_association = Table(
     'user_hotel_association',
     Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id')),
-    Column('hotel_id', Integer, ForeignKey('hotel_rooms.id'))
+    Column('user_id', Integer, ForeignKey('users.id'),primary_key=True),
+    Column('hotel_id', Integer, ForeignKey('hotel_rooms.id'),primary_key=True)
 )
 
 class User(Base):
@@ -28,7 +28,7 @@ class Hotel(Base):
     __tablename__ = "hotel_rooms"
 
     id = Column(Integer, primary_key=True, index=True)
-    hotel_name = Column(String(10), unique=True, index=True)
+    hotel_name = Column(String(100), unique=True, index=True)
     location = Column(String(100),nullable=False)
     room_type = Column(String(50))
     price = Column(Integer)

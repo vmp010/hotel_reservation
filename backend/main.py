@@ -43,7 +43,7 @@ class UserOut(BaseModel):
     id: int
     username: str
     email: EmailStr
-    hotel_id: int | None = None
+    # hotel_id: int | None = None
 
     class Config:
         from_attributes = True
@@ -58,7 +58,7 @@ class LoginResponse(BaseModel):
     id: int
     username: str
     email: EmailStr
-    hotel_id: int | None = None
+    # hotel_id: int | None = None
     message: str
 
     class Config:
@@ -92,7 +92,7 @@ async def create_user(user: UserCreate, db: db_dependency):
         username=user.username,
         email=user.email,
         password=hashed_password,
-        hotel_id=user.hotel_id,
+        # hotel_id=user.hotel_id,
     )
     db.add(db_user)
     db.commit()
@@ -123,7 +123,7 @@ async def login(user: UserLogin, db: db_dependency):
         id=db_user.id,
         username=db_user.username,
         email=db_user.email,
-        hotel_id=db_user.hotel_id,
+        # hotel_id=db_user.hotel_id,
         message="登入成功"
     )
 
