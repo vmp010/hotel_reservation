@@ -41,49 +41,55 @@ const loggedIn = useState('loggedIn')
 
 
 const handleLogin = async () => {
-  error.value = ''
-  success.value = ''
-  
-  if (!email.value || !password.value) {
-    error.value = '請填寫所有欄位'
-    return
-  }
-  
-  loading.value = true
-  loggedIn.value = true
-  
-  try {
-    const res = await $fetch(`${config.public.apiBase}/login/`, {
-      method: 'POST',
-      body: {
-        email: email.value,
-        password: password.value
-      }
-    })
+    error.value = ''
+    success.value = ''
     
-    // 儲存使用者資訊到 localStorage
-    if (process.client) {
-      localStorage.setItem('user', JSON.stringify({
-        id: res.id,
-        username: res.username,
-        email: res.email,
-        hotel_id: res.hotel_id
-      }))
+    if (!email.value || !password.value) {
+        error.value = '請填寫所有欄位'
+        return
     }
     
-    success.value = res.message || '登入成功！'
+    loading.value = true
+    // ⚠️ 移除：loggedIn.value = true 
     
-    // 延遲後導向首頁
-    setTimeout(() => {
-      router.push('/')
-    }, 800)
-    
-  } catch (e) {
-    console.error('Login error:', e)
-    const message = e?.data?.detail || '登入失敗，請檢查帳號密碼'
-    error.value = Array.isArray(message) ? message.join(', ') : message
-  } finally {
-    loading.value = false
-  }
+    try {
+        const res = await $fetch(`${config.public.apiBase}/login/`, {
+            method: 'POST',
+            body: {
+                email: email.value,
+                password: password.value
+            }
+        })
+        
+        // ✨ 修正：登入成功後才設定 loggedIn.value 為 true
+        loggedIn.value = true 
+        
+        // 儲存使用者資訊到 localStorage
+        if (process.client) {
+            // ... (儲存 user 資訊)
+             localStorage.setItem('user', JSON.stringify({
+                 id: res.id,
+                 username: res.username,
+                 email: res.email,
+                 hotel_id: res.hotel_id
+             }))
+        }
+        
+        success.value = res.message || '登入成功！'
+        
+        // 延遲後導向首頁
+        setTimeout(() => {
+            router.push('/')
+        }, 800)
+        
+    } catch (e) {
+        console.error('Login error:', e)
+        const message = e?.data?.detail || '登入失敗，請檢查帳號密碼'
+        error.value = Array.isArray(message) ? message.join(', ') : message
+        // 登入失敗時，loggedIn 保持為 false (初始值) 或明確設定為 false
+        loggedIn.value = false // 確保狀態正確
+    } finally {
+        loading.value = false
+    }
 }
 </script>
