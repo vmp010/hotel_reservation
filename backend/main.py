@@ -36,7 +36,7 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
-    hotel_id: int | None = None
+    # hotel_id: int | None = None
 
 
 class UserOut(BaseModel):
