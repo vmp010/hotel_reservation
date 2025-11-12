@@ -20,10 +20,14 @@
       <p>💰 價格：${{ room.price }} / 晚</p>
       <p>🛏️ 房型：{{ room.room_type }}</p>
     </div>
+    
 
     <div v-else class="text-center text-muted py-5">
       查無此房型 😅
     </div>
+    <NuxtLink to="/about" class="btn btn-warning mt-3">
+      <i class="bi bi-bag-fill"></i> 預定房間
+    </NuxtLink>
   </div>
 </template>
 
