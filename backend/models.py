@@ -2,11 +2,11 @@ from sqlalchemy import Column, ForeignKey, Integer, String,Table
 from sqlalchemy.orm import relationship
 from database import Base
 
-user_hotel_association = Table(
-    'user_hotel_association',
+user_cart = Table(
+    'user_hotel',
     Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id'),primary_key=True),
-    Column('hotel_id', Integer, ForeignKey('hotel_rooms.id'),primary_key=True)
+    Column('user_id', Integer, ForeignKey('users.id',ondelete="CASCADE"),primary_key=True),
+    Column('hotel_id', Integer, ForeignKey('hotel_rooms.id',ondelete="CASCADE"),primary_key=True)
 )
 
 class User(Base):
@@ -18,10 +18,11 @@ class User(Base):
     password = Column(String(100))
     # hotel_id = Column(Integer, ForeignKey("hotel_rooms.id"))
 
-    hotels=relationship(
+    carts=relationship(
         "Hotel",
-        secondary=user_hotel_association,
-        back_populates="users"
+        secondary=user_cart,
+        back_populates="users",
+        passive_deletes=True
     )
 
 class Hotel(Base):
@@ -36,6 +37,7 @@ class Hotel(Base):
 
     users=relationship(
         "User",
-        secondary=user_hotel_association,
-        back_populates="hotels"
+        secondary=user_cart,
+        back_populates="carts",
+        passive_deletes=True
     )
