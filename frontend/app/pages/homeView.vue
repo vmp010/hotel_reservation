@@ -97,7 +97,7 @@ definePageMeta({ middleware: 'auth' })
 // [
 //   { id: 2, location: "台北市中正區", price: 3200, room_type: "雙人房", hotel_name: "彥光汽車旅館" }
 // ]
-const { data: rooms, pending, error } = await useFetch('http://localhost:8000/hotels')
+const { data: rooms, pending, error } = await useFetch('http://127.0.0.1:8000/hotels')
 
 // 🔹 篩選條件
 const selectedCategory = ref('全部')
@@ -130,11 +130,6 @@ const filteredRooms = computed(() => {
   if (selectedCategory.value !== '全部') {
     result = result.filter(r => r.room_type === selectedCategory.value)
   }
-
-  // 目前暫時沒有 tag 資料，所以這段可先略過
-  // if (selectedTag.value) {
-  //   result = result.filter(r => r.tags?.includes(selectedTag.value))
-  // }
 
   return result
 })
