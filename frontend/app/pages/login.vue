@@ -20,6 +20,9 @@
       <p class="text-center mt-3">
         還沒有帳號？<NuxtLink to="/register">註冊</NuxtLink>
       </p>
+      <p class="text-center mt-3">
+        您是業者?<NuxtLink to="/hotelierLogin">請點選此處登入</NuxtLink>
+      </p>
     </div>
   </div>
 </template>
