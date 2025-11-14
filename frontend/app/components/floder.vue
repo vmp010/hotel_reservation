@@ -25,7 +25,7 @@
         >
             刪除飯店
         </button>
-        
+      
         <!-- <NuxtLink class="btn btn-danger btn-lg mt-3 me-3" to="/settingHotel" v-if="route.path !=='/settingHotel'">新增/刪除飯店</NuxtLink> -->
 
       </div>
