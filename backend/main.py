@@ -29,6 +29,7 @@ class HotelRoomCreate(BaseModel):
     location: str
     room_type: str
     price: int | None = None
+    owner: int | None = None
 
 
 
@@ -63,6 +64,21 @@ class LoginResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class HotelOut(BaseModel):
+    id: int
+    hotel_name: str
+    location: str
+    room_type: str
+    price: int | None = None
+    owner: int | None = None
+
+    class Config:
+        from_attributes = True
+
+class CartItemCreate(BaseModel):
+    hotel_id: int
 
 
 def get_db():
@@ -133,7 +149,8 @@ async def create_room(hotel: HotelRoomCreate, db: db_dependency):
         hotel_name=hotel.hotel_name,
         location=hotel.location,
         room_type=hotel.room_type,
-        price=hotel.price
+        price=hotel.price,
+        owner=hotel.owner
     )
     db.add(db_room)
     db.commit()
@@ -159,6 +176,8 @@ def read_index( db: db_dependency, limit: int = 3):
         raise HTTPException(status_code=404, detail="Hotel not found")
     return hotels
 
+
+
 @app.get("/delHotel/{hotel_id}")
 def delete_hotel(hotel_id: int, db: db_dependency):
     hotel = db.query(models.Hotel).filter(models.Hotel.id == hotel_id).first()
@@ -167,6 +186,47 @@ def delete_hotel(hotel_id: int, db: db_dependency):
     db.delete(hotel)
     db.commit()
     return {"detail": "Hotel deleted successfully"}
+
+
+@app.post("/users/{user_id}/cart", response_model=HotelOut, status_code=status.HTTP_201_CREATED)
+async def add_to_cart(user_id: int, item: CartItemCreate, db: db_dependency):
+    # 檢查使用者是否存在
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    # 檢查飯店是否存在
+    db_hotel = db.query(models.Hotel).filter(models.Hotel.id == item.hotel_id).first()
+    if not db_hotel:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hotel not found")
+    
+    # 將飯店加入購物車
+    cart_item = models.user_cart(user_id=user_id, hotel_id=item.hotel_id)
+    db.add(cart_item)
+    db.commit()
+    db.refresh(db_hotel)
+    
+    return db_hotel
+
+@app.get("/users/{user_id}/cart", response_model=list[HotelOut])
+async def get_cart(user_id: int, db: db_dependency):
+    """取得使用者購物車內容"""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user.carts
+
+@app.delete("/users/{user_id}/cart")
+async def clear_cart(user_id: int, db: db_dependency):
+    """清空購物車"""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.carts.clear()
+    db.commit()
+    return {"detail": "Cart cleared"}
 
 @app.get("/")
 def read_root():
