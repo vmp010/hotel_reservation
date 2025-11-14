@@ -1,57 +1,34 @@
-version: "3.9"
-
 services:
-  db:
-    image: mysql:8.0
-    container_name: hotel_db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: hotel_reservation
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: admin123
-     
-    ports:
-      - "3307:3306"
-    volumes:
-      - db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: hotel_phpmyadmin
-    restart: always
-    environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-    ports:
-      - "8080:80"
-    depends_on:
-      - db
   backend:
-    build:
-      context: ./backend   # build context 指向 backend
-      dockerfile: Dockerfile
+    build: ./backend
     container_name: hotel_backend
-    depends_on:
-      db:
-        condition: service_healthy
+    restart: always
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app     # 同步本地 backend 資料夾
+      - ./backend:/app
+      - sqlite-data:/app/data
     environment:
-      DATABASE_URL: mysql+pymysql://admin:admin123@db:3306/hotel_reservation
+      - DATABASE_URL=sqlite:////app/data/hotel_reservation.db
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-    restart: on-failure
+
+  sqlite-web:
+    image: coleifer/sqlite-web
+    container_name: hotel_sqlite_web
+    restart: always
+    ports:
+      - "8081:8080"
+    volumes:
+      - sqlite-data:/data
+    environment:
+      - SQLITE_DATABASE=/data/hotel_reservation.db
+    # ✅ 不指定 command，使用 image 預設行為
+    depends_on:
+      - backend
 
   frontend:
     build:
-      context: ./frontend   # build context 指向 frontend
+      context: ./frontend
       dockerfile: dockerfile
     container_name: hotel_frontend
     restart: always
@@ -60,7 +37,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app    # 同步本地 frontend 資料夾
+      - ./frontend:/app
       - /app/node_modules
     stdin_open: true
     tty: true
@@ -69,4 +46,4 @@ services:
       - NUTRO_HOST=0.0.0.0
 
 volumes:
-  db_data:
+  sqlite-data:

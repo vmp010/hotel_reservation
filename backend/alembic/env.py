@@ -19,7 +19,10 @@ from database import Base
 config = context.config
 
 # 從環境變數讀取資料庫 URL（Docker 環境）
-database_url = os.getenv("DATABASE_URL", "mysql+pymysql://admin:admin123@localhost:3307/hotel_reservation")
+database_url = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///./hotel_reservation.db"
+)
 config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.

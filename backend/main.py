@@ -200,9 +200,12 @@ async def add_to_cart(user_id: int, item: CartItemCreate, db: db_dependency):
     if not db_hotel:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hotel not found")
     
-    # 將飯店加入購物車
-    cart_item = models.user_cart(user_id=user_id, hotel_id=item.hotel_id)
-    db.add(cart_item)
+    # 檢查是否已在購物車
+    if db_hotel in db_user.carts:
+        raise HTTPException(status_code=400, detail="Hotel already in cart")
+    
+    # ✅ 正確：使用 relationship 加入
+    db_user.carts.append(db_hotel)
     db.commit()
     db.refresh(db_hotel)
     
