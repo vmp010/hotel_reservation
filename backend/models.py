@@ -33,19 +33,18 @@ class Hotel(Base):
     location = Column(String(100),nullable=False)
     room_type = Column(String(50))
     price = Column(Integer)
-    owner=Column(Integer,ForeignKey("owners.id",ondelete="CASCADE"))
-    # user_id = Column(Integer,ForeignKey("users.id"))
+    owner=Column(Integer,ForeignKey("owners.id",ondelete="CASCADE"),nullable=False)
 
-    users=relationship(
-        "User",
-        secondary=user_cart,
-        back_populates="carts",
-        passive_deletes=True
-    )
+    owner_rel=relationship("Owner",back_populates="hotels")
+    users=relationship("User",secondary=user_cart,back_populates="carts",passive_deletes=True)
+    # user_id = Column(Integer,ForeignKey("users.id"))
 
 class Owner(Base):
     __tablename__ = "owners"
 
     id = Column(Integer, primary_key=True, index=True)
     owner_name = Column(String(100), unique=True, index=True)
-    hotel_id = Column(Integer, ForeignKey("hotel_rooms.id", ondelete="CASCADE"))
+    email = Column(String(100), unique=True, index=True)
+    password = Column(String(100),nullable=False)
+
+    hotels= relationship("Hotel", back_populates="owner_rel", passive_deletes=True)

@@ -6,8 +6,10 @@ from database import engine, SessionLocal
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 import bcrypt
+import auth
 
 app = FastAPI()
+app.include_router(auth.router)
 
 origins = [
     "http://localhost:3000",
@@ -29,15 +31,15 @@ class HotelRoomCreate(BaseModel):
     location: str
     room_type: str
     price: int | None = None
-    owner: int | None = None
+    # owner: int | None = None
 
 
 
-class UserCreate(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-    # hotel_id: int | None = None
+# class UserCreate(BaseModel):
+#     username: str
+#     email: EmailStr
+#     password: str
+#     # hotel_id: int | None = None
 
 
 class UserOut(BaseModel):
@@ -80,6 +82,14 @@ class HotelOut(BaseModel):
 class CartItemCreate(BaseModel):
     hotel_id: int
 
+class OwnerReigister(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+
+class OwnerLogin(BaseModel):
+    email: EmailStr
+    password: str
 
 def get_db():
     db = SessionLocal()
@@ -90,30 +100,30 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
-@app.post("/users/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-async def create_user(user: UserCreate, db: db_dependency):
-    # Check for duplicate username or email
-    existing_user = (
-        db.query(models.User)
-        .filter((models.User.username == user.username) | (models.User.email == user.email))
-        .first()
-    )
-    if existing_user:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username or email already registered")
+# @app.post("/users/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+# async def create_user(user: UserCreate, db: db_dependency):
+#     # Check for duplicate username or email
+#     existing_user = (
+#         db.query(models.User)
+#         .filter((models.User.username == user.username) | (models.User.email == user.email))
+#         .first()
+#     )
+#     if existing_user:
+#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username or email already registered")
 
-    # Hash password using bcrypt
-    hashed_password = bcrypt.hashpw(user.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+#     # Hash password using bcrypt
+#     hashed_password = bcrypt.hashpw(user.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-    db_user = models.User(
-        username=user.username,
-        email=user.email,
-        password=hashed_password,
-        # hotel_id=user.hotel_id,
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+#     db_user = models.User(
+#         username=user.username,
+#         email=user.email,
+#         password=hashed_password,
+#         # hotel_id=user.hotel_id,
+#     )
+#     db.add(db_user)
+#     db.commit()
+#     db.refresh(db_user)
+#     return db_user
 
 
 @app.post("/login/", response_model=LoginResponse)
@@ -235,7 +245,36 @@ async def clear_cart(user_id: int, db: db_dependency):
 def read_root():
     return {"Hello": "World"} 
 
-#驗光好菜          
+@app.post("/owners/register", status_code=status.HTTP_201_CREATED)
+async def register_owner(owner: OwnerReigister, db: db_dependency):
+    # Check for duplicate email
+    existing_owner = db.query(models.Owner).filter(models.Owner.email == owner.email).first()
+    if existing_owner:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+
+    # Hash password using bcrypt
+    hashed_password = bcrypt.hashpw(owner.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    db_owner = models.Owner(
+        name=owner.name,
+        email=owner.email,
+        password=hashed_password
+    )
+    db.add(db_owner)
+    db.commit()
+    db.refresh(db_owner)
+    return db_owner
+
+@app.post("/owners/login", response_model=LoginResponse)
+async def login_owner(owner: OwnerLogin, db: db_dependency):
+    db_owner = db.query(models.Owner).filter(models.Owner.email == owner.email).first()
+    if not db_owner:
+        raise HTTPException(status_code=401, detail="Email 或密碼錯誤")
+    
+    # 驗證密碼
+    if not bcrypt.checkpw(owner.password.encode("utf-8"), db_owner.password.encode("utf-8")):
+        raise HTTPException(status_code=401, detail="Email 或密碼錯誤")
+
 
 # #管理每次 API 請求的資料庫連線
 # def get_session(): 
