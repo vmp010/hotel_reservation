@@ -43,30 +43,30 @@ class HotelRoomCreate(BaseModel):
 #     # hotel_id: int | None = None
 
 
-class UserOut(BaseModel):
-    id: int
-    username: str
-    email: EmailStr
-    # hotel_id: int | None = None
+# class UserOut(BaseModel):
+#     id: int
+#     username: str
+#     email: EmailStr
+#     # hotel_id: int | None = None
 
-    class Config:
-        from_attributes = True
-
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
+#     class Config:
+#         from_attributes = True
 
 
-class LoginResponse(BaseModel):
-    id: int
-    username: str
-    email: EmailStr
-    # hotel_id: int | None = None
-    message: str
+# class UserLogin(BaseModel):
+#     email: EmailStr
+#     password: str
 
-    class Config:
-        from_attributes = True
+
+# class LoginResponse(BaseModel):
+#     id: int
+#     username: str
+#     email: EmailStr
+#     # hotel_id: int | None = None
+#     message: str
+
+#     class Config:
+#         from_attributes = True
 
 
 class HotelOut(BaseModel):
@@ -83,14 +83,14 @@ class HotelOut(BaseModel):
 class CartItemCreate(BaseModel):
     hotel_id: int
 
-class OwnerReigister(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
+# class OwnerReigister(BaseModel):
+#     name: str
+#     email: EmailStr
+#     password: str
 
-class OwnerLogin(BaseModel):
-    email: EmailStr
-    password: str
+# class OwnerLogin(BaseModel):
+#     email: EmailStr
+#     password: str
 
 def get_db():
     db = SessionLocal()
@@ -101,6 +101,7 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
+owner_dependency = Annotated[dict, Depends(auth.get_current_owner)]
 
 # @app.post("/users/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 # async def create_user(user: UserCreate, db: db_dependency):
@@ -128,32 +129,32 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 #     return db_user
 
 
-@app.post("/login/", response_model=LoginResponse)
-async def login(user: UserLogin, db: db_dependency):
-    # 查找使用者（使用 email）
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+# @app.post("/login/", response_model=LoginResponse)
+# async def login(user: UserLogin, db: db_dependency):
+#     # 查找使用者（使用 email）
+#     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     
-    if not db_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Email 或密碼錯誤"
-        )
+#     if not db_user:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED, 
+#             detail="Email 或密碼錯誤"
+#         )
     
-    # 驗證密碼
-    if not bcrypt.checkpw(user.password.encode("utf-8"), db_user.password.encode("utf-8")):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Email 或密碼錯誤"
-        )
+#     # 驗證密碼
+#     if not bcrypt.checkpw(user.password.encode("utf-8"), db_user.password.encode("utf-8")):
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED, 
+#             detail="Email 或密碼錯誤"
+#         )
     
-    # 登入成功，回傳使用者資訊
-    return LoginResponse(
-        id=db_user.id,
-        username=db_user.username,
-        email=db_user.email,
-        # hotel_id=db_user.hotel_id,
-        message="登入成功"
-    )
+#     # 登入成功，回傳使用者資訊
+#     return LoginResponse(
+#         id=db_user.id,
+#         username=db_user.username,
+#         email=db_user.email,
+#         # hotel_id=db_user.hotel_id,
+#         message="登入成功"
+#     )
 
 @app.post("/create_hotel/", response_model=HotelRoomCreate, status_code=status.HTTP_201_CREATED)
 async def create_room(hotel: HotelRoomCreate, db: db_dependency):
@@ -243,41 +244,47 @@ async def clear_cart(user_id: int, db: db_dependency):
     db.commit()
     return {"detail": "Cart cleared"}
 
-@app.get("/",status_code=200)
+@app.get("/get_current_user",status_code=status.HTTP_200_OK)
 async def user(user: user_dependency,db: db_dependency):
     if user is None:
-        raise HTTPException(status_code=401,detail="Invalid authentication credentials")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid authentication credentials")
     return {"User":user}
 
-@app.post("/owners/register", status_code=status.HTTP_201_CREATED)
-async def register_owner(owner: OwnerReigister, db: db_dependency):
-    # Check for duplicate email
-    existing_owner = db.query(models.Owner).filter(models.Owner.email == owner.email).first()
-    if existing_owner:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+@app.get("/get_current_owner",status_code=status.HTTP_200_OK)
+async def owner(owner: owner_dependency,db: db_dependency):
+    if owner is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid authentication credentials")
+    return {"Owner":owner}
 
-    # Hash password using bcrypt
-    hashed_password = bcrypt.hashpw(owner.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+# @app.post("/owners/register", status_code=status.HTTP_201_CREATED)
+# async def register_owner(owner: OwnerReigister, db: db_dependency):
+#     # Check for duplicate email
+#     existing_owner = db.query(models.Owner).filter(models.Owner.email == owner.email).first()
+#     if existing_owner:
+#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
-    db_owner = models.Owner(
-        name=owner.name,
-        email=owner.email,
-        password=hashed_password
-    )
-    db.add(db_owner)
-    db.commit()
-    db.refresh(db_owner)
-    return db_owner
+#     # Hash password using bcrypt
+#     hashed_password = bcrypt.hashpw(owner.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-@app.post("/owners/login", response_model=LoginResponse)
-async def login_owner(owner: OwnerLogin, db: db_dependency):
-    db_owner = db.query(models.Owner).filter(models.Owner.email == owner.email).first()
-    if not db_owner:
-        raise HTTPException(status_code=401, detail="Email 或密碼錯誤")
+#     db_owner = models.Owner(
+#         name=owner.name,
+#         email=owner.email,
+#         password=hashed_password
+#     )
+#     db.add(db_owner)
+#     db.commit()
+#     db.refresh(db_owner)
+#     return db_owner
+
+# @app.post("/owners/login", response_model=LoginResponse)
+# async def login_owner(owner: OwnerLogin, db: db_dependency):
+#     db_owner = db.query(models.Owner).filter(models.Owner.email == owner.email).first()
+#     if not db_owner:
+#         raise HTTPException(status_code=401, detail="Email 或密碼錯誤")
     
-    # 驗證密碼
-    if not bcrypt.checkpw(owner.password.encode("utf-8"), db_owner.password.encode("utf-8")):
-        raise HTTPException(status_code=401, detail="Email 或密碼錯誤")
+#     # 驗證密碼
+#     if not bcrypt.checkpw(owner.password.encode("utf-8"), db_owner.password.encode("utf-8")):
+#         raise HTTPException(status_code=401, detail="Email 或密碼錯誤")
 
 
 # #管理每次 API 請求的資料庫連線
