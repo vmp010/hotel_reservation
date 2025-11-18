@@ -5,6 +5,7 @@
       <form @submit.prevent="handleLogin">
         <div class="mb-3">
           <label class="form-label">電子郵件</label>
+          <!-- 這邊暫時使用 text 等vmp修好api 再改程email -->
           <input v-model="email" type="email" class="form-control" placeholder="輸入 Email" required>
         </div>
         <div class="mb-3">
@@ -18,9 +19,8 @@
         <p v-if="success" class="text-success mt-2">{{ success }}</p>
       </form>
       <p class="text-center mt-3">
-        還沒有帳號？<NuxtLink to="/register">註冊(這邊應該要改成業者的api)</NuxtLink>
+        還沒有帳號？<NuxtLink to="/registerOwner">註冊(這邊應該要改成業者的api)</NuxtLink>
       </p>
-      <NuxtLink to="/settingHotel"><button class="btn btn-dark w-100">直接進入設定頁面</button></NuxtLink>
     </div>
   </div>
 </template>
