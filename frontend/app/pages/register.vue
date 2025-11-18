@@ -57,7 +57,7 @@ const handleregister = async () => {
   }
   loading.value = true
   try {
-    const res = await $fetch(`${config.public.apiBase}/users/`, {
+    const res = await $fetch(`${config.public.apiBase}/auth/register/user`, {
       method: 'POST',
       body: {
         email: email.value,

@@ -30,6 +30,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+// ✨ 從 composables/useAuth.js 引入我們需要的狀態管理
+import { useAuthToken, useLoggedIn, useUser } from '~/composables/useAuth';
 
 const router = useRouter()
 const config = useRuntimeConfig()
@@ -39,8 +41,11 @@ const password = ref('')
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
-// loggedIn 用來判斷是否登入，才可能進去開始找房
-const loggedIn = useState('loggedIn')
+
+// 取得 JWT 狀態和 User 狀態
+const authToken = useAuthToken();
+const loggedIn = useLoggedIn(); // 雖然是 computed，但取得以便查看狀態變化
+const user = useUser();
 
 
 const handleLogin = async () => {
@@ -53,10 +58,10 @@ const handleLogin = async () => {
     }
     
     loading.value = true
-    // ⚠️ 移除：loggedIn.value = true 
     
     try {
-        const res = await $fetch(`${config.public.apiBase}/login/`, {
+        // 🚩 假設 API /auth/token/ 收到 POST 請求後，返回格式為 { access_token: "..." }
+        const res = await $fetch(`${config.public.apiBase}/auth/token/`, {
             method: 'POST',
             body: {
                 email: email.value,
@@ -64,23 +69,34 @@ const handleLogin = async () => {
             }
         })
         
-        // ✨ 修正：登入成功後才設定 loggedIn.value 為 true
-        loggedIn.value = true 
+        const token = res.access_token || res.token; 
+        if (!token) {
+             // 確保 API 真的有回傳 Token
+            throw new Error('API 登入成功，但缺少 Token 資訊。');
+        }
+
+        // ✨ 核心步驟：儲存 JWT Token 到 Cookie
+        authToken.value = token; 
         
-        // 儲存使用者資訊到 localStorage
-        if (process.client) {
-            // ... (儲存 user 資訊)
-             localStorage.setItem('user', JSON.stringify({
-                 id: res.id,
-                 username: res.username,
-                 email: res.email,
-                 hotel_id: res.hotel_id
-             }))
+        // 💡 [優化] 如果 API 有返回使用者資訊 (e.g., res.user)，也應存入
+        if (res.user) {
+            user.value = res.user;
+        } else {
+            // 這裡可以手動構造或在 /login 後立即調用 /users/me 獲取資訊
+             user.value = {
+                id: res.id,
+                email: res.email,
+                username: res.username
+             }
         }
         
-        success.value = res.message || '登入成功！'
+        // 舊的 localStorage 邏輯現在由 user 狀態處理，可移除，但為了兼容保留 user 存儲
+        if (process.client) {
+             localStorage.setItem('user', JSON.stringify(user.value))
+        }
+
+        success.value = '登入成功！';
         
-        // 延遲後導向首頁
         setTimeout(() => {
             router.push('/')
         }, 800)
@@ -89,8 +105,11 @@ const handleLogin = async () => {
         console.error('Login error:', e)
         const message = e?.data?.detail || '登入失敗，請檢查帳號密碼'
         error.value = Array.isArray(message) ? message.join(', ') : message
-        // 登入失敗時，loggedIn 保持為 false (初始值) 或明確設定為 false
-        loggedIn.value = false // 確保狀態正確
+        
+        // 登入失敗時，確保 Cookie 和狀態被清除
+        authToken.value = null;
+        user.value = null;
+
     } finally {
         loading.value = false
     }
