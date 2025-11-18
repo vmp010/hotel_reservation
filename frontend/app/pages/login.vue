@@ -5,7 +5,7 @@
       <form @submit.prevent="handleLogin">
         <div class="mb-3">
           <label class="form-label">電子郵件</label>
-          <input v-model="email" type="email" class="form-control" placeholder="輸入 Email" required>
+          <input v-model="email" type="text" class="form-control" placeholder="輸入 Email" required>
         </div>
         <div class="mb-3">
           <label class="form-label">密碼</label>
@@ -58,15 +58,15 @@ const handleLogin = async () => {
     }
     
     loading.value = true
-    
+    const formData = new FormData();
+
+    formData.append('username', email.value); // 注意：某些 API 使用 username 欄位來接收 email
+    formData.append('password', password.value); // 密碼欄位
     try {
         // 🚩 假設 API /auth/token/ 收到 POST 請求後，返回格式為 { access_token: "..." }
-        const res = await $fetch(`${config.public.apiBase}/auth/token/`, {
+        const res = await $fetch(`${config.public.apiBase}/auth/token`, {
             method: 'POST',
-            body: {
-                email: email.value,
-                password: password.value
-            }
+            body: formData,
         })
         
         const token = res.access_token || res.token; 
