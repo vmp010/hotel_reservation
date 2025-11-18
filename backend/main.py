@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 import bcrypt
 import auth
+from auth import get_current_user
 
 app = FastAPI()
 app.include_router(auth.router)
@@ -99,6 +100,7 @@ def get_db():
         db.close()
 
 db_dependency = Annotated[Session, Depends(get_db)]
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
 # @app.post("/users/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 # async def create_user(user: UserCreate, db: db_dependency):
@@ -241,9 +243,11 @@ async def clear_cart(user_id: int, db: db_dependency):
     db.commit()
     return {"detail": "Cart cleared"}
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"} 
+@app.get("/",status_code=200)
+async def user(user: user_dependency,db: db_dependency):
+    if user is None:
+        raise HTTPException(status_code=401,detail="Invalid authentication credentials")
+    return {"User":user}
 
 @app.post("/owners/register", status_code=status.HTTP_201_CREATED)
 async def register_owner(owner: OwnerReigister, db: db_dependency):
