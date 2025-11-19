@@ -8,9 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 import bcrypt
 import auth
 from auth import get_current_user
+from routers import carts
 
 app = FastAPI()
 app.include_router(auth.router)
+app.include_router(carts.router)
 
 origins = [
     "http://localhost:3000",
@@ -201,48 +203,48 @@ def delete_hotel(hotel_id: int, db: db_dependency):
     return {"detail": "Hotel deleted successfully"}
 
 
-@app.post("/users/{user_id}/cart", response_model=HotelOut, status_code=status.HTTP_201_CREATED)
-async def add_to_cart(user_id: int, item: CartItemCreate, db: db_dependency):
-    # 檢查使用者是否存在
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not db_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+# @app.post("/users/{user_id}/cart", response_model=HotelOut, status_code=status.HTTP_201_CREATED)
+# async def add_to_cart(user_id: int, item: CartItemCreate, db: db_dependency):
+#     # 檢查使用者是否存在
+#     db_user = db.query(models.User).filter(models.User.id == user_id).first()
+#     if not db_user:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
-    # 檢查飯店是否存在
-    db_hotel = db.query(models.Hotel).filter(models.Hotel.id == item.hotel_id).first()
-    if not db_hotel:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hotel not found")
+#     # 檢查飯店是否存在
+#     db_hotel = db.query(models.Hotel).filter(models.Hotel.id == item.hotel_id).first()
+#     if not db_hotel:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hotel not found")
     
-    # 檢查是否已在購物車
-    if db_hotel in db_user.carts:
-        raise HTTPException(status_code=400, detail="Hotel already in cart")
+#     # 檢查是否已在購物車
+#     if db_hotel in db_user.carts:
+#         raise HTTPException(status_code=400, detail="Hotel already in cart")
     
-    # ✅ 正確：使用 relationship 加入
-    db_user.carts.append(db_hotel)
-    db.commit()
-    db.refresh(db_hotel)
+#     # ✅ 正確：使用 relationship 加入
+#     db_user.carts.append(db_hotel)
+#     db.commit()
+#     db.refresh(db_hotel)
     
-    return db_hotel
+#     return db_hotel
 
-@app.get("/users/{user_id}/cart", response_model=list[HotelOut])
-async def get_cart(user_id: int, db: db_dependency):
-    """取得使用者購物車內容"""
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+# @app.get("/users/{user_id}/cart", response_model=list[HotelOut])
+# async def get_cart(user_id: int, db: db_dependency):
+#     """取得使用者購物車內容"""
+#     user = db.query(models.User).filter(models.User.id == user_id).first()
+#     if not user:
+#         raise HTTPException(status_code=404, detail="User not found")
     
-    return user.carts
+#     return user.carts
 
-@app.delete("/users/{user_id}/cart")
-async def clear_cart(user_id: int, db: db_dependency):
-    """清空購物車"""
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+# @app.delete("/users/{user_id}/cart")
+# async def clear_cart(user_id: int, db: db_dependency):
+#     """清空購物車"""
+#     user = db.query(models.User).filter(models.User.id == user_id).first()
+#     if not user:
+#         raise HTTPException(status_code=404, detail="User not found")
     
-    user.carts.clear()
-    db.commit()
-    return {"detail": "Cart cleared"}
+#     user.carts.clear()
+#     db.commit()
+#     return {"detail": "Cart cleared"}
 
 @app.get("/get_current_user",status_code=status.HTTP_200_OK)
 async def user(user: user_dependency,db: db_dependency):
