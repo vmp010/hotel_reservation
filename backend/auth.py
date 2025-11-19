@@ -129,7 +129,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
       token=create_access_token(owner.owner_name,owner.id,"owner",timedelta(minutes=30))
       return {"access_token":token,"token_type":"bearer","role":"owner"}
   
-  user=db.query(User).filter(User.username == input_email).first()
+  user=db.query(User).filter(User.email == input_email).first()
   if user and bcrypt_context.verify(input_password, user.password):
       token=create_access_token(user.username,user.id,"user",timedelta(minutes=30))
       return {"access_token":token,"token_type":"bearer","role":"user"}
