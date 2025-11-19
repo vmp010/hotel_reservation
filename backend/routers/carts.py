@@ -8,12 +8,12 @@ router = APIRouter(
     tags=["carts"]
 )
 
-@router.post("/carts/{hotel_id}", status_code=status.HTTP_201_CREATED)
+@router.post("/{hotel_id}", status_code=status.HTTP_201_CREATED)
 async def add_hotel_to_cart(hotel_id: int, 
-                            user: dict = Depends(get_current_user),
-                              db: Session = Depends(db_dependency)):
+                            db: db_dependency,
+                            user: dict = Depends(get_current_user)):
     
-    db_user = db.query(User).filter(User.id == user.id).first()
+    db_user = db.query(User).filter(User.id == user["id"]).first()
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     hotel=db.query(Hotel).filter(Hotel.id==hotel_id).first()
@@ -28,9 +28,9 @@ async def add_hotel_to_cart(hotel_id: int,
     
     return{"message":f'Hotel {hotel.hotel_name} added to cart successfully'}
 
-@router.get("/carts", status_code=status.HTTP_200_OK)
-async def get_user_cart(user: dict = Depends(get_current_user),
-                         db: Session = Depends(db_dependency)):
+@router.get("/", status_code=status.HTTP_200_OK)
+async def get_user_cart(db: db_dependency,
+                        user: dict = Depends(get_current_user)):
     
     db_user = db.query(User).filter(User.id == user.id).first()
     if not db_user:
@@ -38,12 +38,12 @@ async def get_user_cart(user: dict = Depends(get_current_user),
     
     return db_user.carts
 
-@router.delete("/carts/{hotel_id}", status_code=status.HTTP_200_OK)
-async def remove_hotel_from_cart(hotel_id: int, 
-                                 user: dict = Depends(get_current_user),
-                                   db: Session = Depends(db_dependency)):
+@router.delete("/{hotel_id}", status_code=status.HTTP_200_OK)
+async def remove_hotel_from_cart(db: db_dependency,
+                                hotel_id: int, 
+                                 user: dict = Depends(get_current_user)):
     
-    db_user = db.query(User).filter(User.id == user.id).first()
+    db_user = db.query(User).filter(User.id == user["id"]).first()
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     hotel=db.query(Hotel).filter(Hotel.id==hotel_id).first()
