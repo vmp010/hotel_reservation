@@ -45,10 +45,22 @@
 <script setup>
 import Swal from 'sweetalert2'; 
 import { useRouter } from 'vue-router'; 
-import { performLogoutCleanup, useLoggedIn } from '~/composables/useAuth'; // 請確保路徑正確
+import { onMounted } from 'vue'; // 引入 onMounted
+
+// ✨ 核心修正：合併所有來自 useAuth 的導入到一行
+import { 
+    performLogoutCleanup, 
+    useLoggedIn, 
+    initializeUserSession // 這是您需要的初始化函式
+} from '~/composables/useAuth';
 
 const router = useRouter();
 const loggedIn = useLoggedIn(); 
+// 🚩 核心：在組件掛載時，檢查並恢復使用者資料
+onMounted(() => {
+    initializeUserSession();
+});
+
 
 const handleLogout = async () => {
     const result = await Swal.fire({

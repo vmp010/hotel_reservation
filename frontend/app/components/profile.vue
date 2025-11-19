@@ -1,6 +1,15 @@
 <template>
   <div class="container py-5">
-    <div class="row">
+    
+    <!-- 1. 載入中/未登入的 fallback 畫面 (v-else) -->
+    <div v-if="!userState" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-muted">正在載入使用者資料或您尚未登入...</p>
+    </div>
+
+    <!-- 2. 主內容：當 userState 存在時才渲染 (v-if) -->
+    <div v-else class="row">
+      
       <!-- 左側導覽 -->
       <div class="col-md-4 mb-4">
         <div class="card shadow-sm text-center p-4">
@@ -10,16 +19,18 @@
             alt="User Avatar"
             width="120"
           />
-          <h4 class="mb-1">{{ userState.username || '無資料' }}</h4>
-          <p class="text-muted mb-3">{{ userState.email || '無資料' }}</p>
+          <!-- 顯示動態資料：使用 || '無資料' 作為 fallback -->
+          <h4 class="mb-1">{{ userState.username || '無用戶名' }}</h4>
+          <p class="text-muted mb-3">{{ userState.email || '無電子郵件' }}</p>
 
           <hr />
 
-          <!-- 個人資料區 -->
+          <!-- 個人資料區 (部分資料仍是寫死的，待 API 補全) -->
           <div class="text-start px-2 mb-3">
-            <p class="mb-1"><strong>電話：</strong>0912-345-678</p>
-            <p class="mb-1"><strong>生日：</strong>2000/01/01</p>
-            <p class="mb-1"><strong>地址：</strong>台北市中正區</p>
+            <p class="mb-1"><strong>角色：</strong>{{ userState.role === 'owner' ? '飯店業者' : '一般用戶' }}</p>
+            <p class="mb-1"><strong>電話：</strong>{{ userState.phone || '0912-345-678' }}</p>
+            <p class="mb-1"><strong>生日：</strong>{{ userState.birthday || '2000/01/01' }}</p>
+            <p class="mb-1"><strong>地址：</strong>{{ userState.address || '台北市中正區' }}</p>
           </div>
 
           <hr />
@@ -50,22 +61,14 @@
           <!-- 購物車 -->
           <div v-if="currentTab === 'cart'">
             <h4 class="mb-4">
-              <i class="bi bi-cart-fill me-2"></i> 我的購物車
+              <i class="bi bi-cart-fill me-2"></i> 我的購物車 (靜態範例)
             </h4>
 
             <ul class="list-group">
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                豪華雙人房
-                <span class="badge bg-primary rounded-pill">$3200</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                海景套房
-                <span class="badge bg-primary rounded-pill">$4500</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                家庭四人房
-                <span class="badge bg-primary rounded-pill">$5000</span>
-              </li>
+              <!-- ... 靜態購物車項目 ... -->
+              <li class="list-group-item d-flex justify-content-between align-items-center">豪華雙人房<span class="badge bg-primary rounded-pill">$3200</span></li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">海景套房<span class="badge bg-primary rounded-pill">$4500</span></li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">家庭四人房<span class="badge bg-primary rounded-pill">$5000</span></li>
             </ul>
 
             <div class="text-end mt-4">
@@ -82,6 +85,7 @@
             </h4>
 
             <form @submit.prevent="updateProfile">
+              <!-- 表單綁定到 profile ref -->
               <div class="mb-3">
                 <label class="form-label">姓名</label>
                 <input v-model="profile.name" type="text" class="form-control" />
@@ -112,26 +116,38 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, watch } from "vue";
+import { useUser } from '~/composables/useAuth'; // 導入全域 user 狀態
 
-const currentTab = ref("cart"); // 預設顯示購物車
-
-const profile = ref({
-  name: "賴彥光",
-  email: "light@example.com",
-  phone: "0912-345-678",
-  address: "台北市中正區",
-});
-
-function updateProfile() {
-  alert("資料已更新！");
-}
-//測試
-// 1. 只需要從 useAuth.js 導入 useUser 函式
-import { useUser } from '~/composables/useAuth'; 
-
-// 2. 執行函式並取得全域狀態的 Ref
-//    userState 是一個響應式物件，只要登入頁面更新了它，這裡也會自動更新。
+// 1. 執行函式並取得全域狀態的 Ref
 const userState = useUser(); 
 
+// 2. 頁面切換狀態
+const currentTab = ref("cart"); 
+
+// 3. 表單狀態 (Profile Form State)
+const profile = ref({
+  name: "載入中...",
+  email: "載入中...",
+  phone: "",
+  address: "",
+});
+
+// 4. 使用 watch 監聽 userState 的變化，並同步到 profile 表單
+// 這樣即使資料是延遲載入的，表單也會自動更新
+watch(userState, (newUser) => {
+  if (newUser) {
+    // 從 userState 複製資料到 profile 表單
+    profile.value.name = newUser.username || '無用戶名';
+    profile.value.email = newUser.email || '無電子郵件';
+    profile.value.phone = newUser.phone || ''; // 從實際 API 欄位獲取
+    profile.value.address = newUser.address || ''; // 從實際 API 欄位獲取
+  }
+}, { immediate: true }); 
+
+// 5. 處理表單提交 (未來會呼叫 API)
+function updateProfile() {
+  console.log("資料已更新！(需要呼叫 API 儲存)", profile.value);
+  // 這裡應呼叫 updateProfileAPI(profile.value)
+}
 </script>

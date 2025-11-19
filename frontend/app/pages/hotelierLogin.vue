@@ -96,7 +96,7 @@ const handleLogin = async () => {
         success.value = '登入成功！';
         
         setTimeout(() => {
-            router.push('/')
+            router.push('/settingHotel')
         }, 800)
         
     } catch (e) {
