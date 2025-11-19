@@ -10,8 +10,8 @@
             alt="User Avatar"
             width="120"
           />
-          <h4 class="mb-1">賴彥光</h4>
-          <p class="text-muted mb-3">light@example.com</p>
+          <h4 class="mb-1">{{ userState.username || '無資料' }}</h4>
+          <p class="text-muted mb-3">{{ userState.email || '無資料' }}</p>
 
           <hr />
 
@@ -126,4 +126,12 @@ const profile = ref({
 function updateProfile() {
   alert("資料已更新！");
 }
+//測試
+// 1. 只需要從 useAuth.js 導入 useUser 函式
+import { useUser } from '~/composables/useAuth'; 
+
+// 2. 執行函式並取得全域狀態的 Ref
+//    userState 是一個響應式物件，只要登入頁面更新了它，這裡也會自動更新。
+const userState = useUser(); 
+
 </script>

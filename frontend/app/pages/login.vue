@@ -31,7 +31,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 // ✨ 從 composables/useAuth.js 引入我們需要的狀態管理
-import { useAuthToken, useLoggedIn, useUser } from '~/composables/useAuth';
+import { useAuthToken, useUser } from '~/composables/useAuth';
 
 const router = useRouter()
 const config = useRuntimeConfig()
@@ -44,7 +44,6 @@ const success = ref('')
 
 // 取得 JWT 狀態和 User 狀態
 const authToken = useAuthToken();
-const loggedIn = useLoggedIn(); // 雖然是 computed，但取得以便查看狀態變化
 const user = useUser();
 
 
@@ -58,8 +57,9 @@ const handleLogin = async () => {
     }
     
     loading.value = true
-    const formData = new FormData();
 
+    // 準備 FormData 請求
+    const formData = new FormData();
     formData.append('username', email.value); // 注意：某些 API 使用 username 欄位來接收 email
     formData.append('password', password.value); // 密碼欄位
     try {
@@ -78,17 +78,14 @@ const handleLogin = async () => {
         // ✨ 核心步驟：儲存 JWT Token 到 Cookie
         authToken.value = token; 
         
-        // 💡 [優化] 如果 API 有返回使用者資訊 (e.g., res.user)，也應存入
-        if (res.user) {
-            user.value = res.user;
-        } else {
-            // 這裡可以手動構造或在 /login 後立即調用 /users/me 獲取資訊
-             user.value = {
-                id: res.id,
-                email: res.email,
-                username: res.username
-             }
-        }
+        // 4. 儲存使用者資料到全域狀態 (user.value)
+        // 🚨 修正和擴展這裡的邏輯，確保 about.vue 有足夠的資料
+        user.value = {
+            id: res.id || null, // 假設 API 會回傳 id
+            username: res.username || email.value.split('@')[0], // 假設 username 是 email 的一部分
+            email: email.value, // 使用表單輸入的 email
+            role: res.role || 'user' // 假設 API 會回傳 role
+        };
         
         // 舊的 localStorage 邏輯現在由 user 狀態處理，可移除，但為了兼容保留 user 存儲
         if (process.client) {
