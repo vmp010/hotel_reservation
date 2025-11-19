@@ -1,4 +1,4 @@
-from typing import List
+from typing import List,Optional
 from pydantic import BaseModel
 
 class HotleDisplay(BaseModel):
@@ -11,4 +11,13 @@ class HotleDisplay(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
+
+class HotelCreate(BaseModel):
+    hotel_name: str
+    location: str
+    room_type: str
+    price: int
+
+    class Config:
         from_attributes = True

@@ -11,9 +11,9 @@ router = APIRouter(
 @router.post("/{hotel_id}", status_code=status.HTTP_201_CREATED)
 async def add_hotel_to_cart(hotel_id: int, 
                             db: db_dependency,
-                            user: dict = Depends(get_current_user)):
+                            user: User = Depends(get_current_user)):
     
-    db_user = db.query(User).filter(User.id == user["id"]).first()
+    db_user = db.query(User).filter(User.id == user.id).first()
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     hotel=db.query(Hotel).filter(Hotel.id==hotel_id).first()
@@ -30,9 +30,9 @@ async def add_hotel_to_cart(hotel_id: int,
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def get_user_cart(db: db_dependency,
-                        user: dict = Depends(get_current_user)):
+                        user: User = Depends(get_current_user)):
     
-    db_user = db.query(User).filter(User.id == user["id"]).first()
+    db_user = db.query(User).filter(User.id == user.id).first()
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
@@ -41,9 +41,9 @@ async def get_user_cart(db: db_dependency,
 @router.delete("/{hotel_id}", status_code=status.HTTP_200_OK)
 async def remove_hotel_from_cart(db: db_dependency,
                                 hotel_id: int, 
-                                 user: dict = Depends(get_current_user)):
+                                 user: User = Depends(get_current_user)):
     
-    db_user = db.query(User).filter(User.id == user["id"]).first()
+    db_user = db.query(User).filter(User.id == user.id).first()
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     hotel=db.query(Hotel).filter(Hotel.id==hotel_id).first()

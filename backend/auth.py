@@ -79,7 +79,7 @@ async def get_current_user(token: Annotated[str, Depends(OAuth2_bearer)], db: db
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="使用者不存在",
             )
-        return {"username":username,"id":user_id}
+        return user
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -163,7 +163,7 @@ async def get_current_owner(token: Annotated[str, Depends(OAuth2_bearer)], db: d
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Owner does not exist",
             )
-        return {"owner_name":owner_name,"id":owner_id}
+        return owner
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
