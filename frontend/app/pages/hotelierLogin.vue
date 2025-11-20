@@ -75,18 +75,14 @@ const handleLogin = async () => {
 
         // ✨ 核心步驟：儲存 JWT Token 到 Cookie
         authToken.value = token; 
-        
-        // 💡 [優化] 如果 API 有返回使用者資訊 (e.g., res.user)，也應存入
-        if (res.user) {
-            user.value = res.user;
-        } else {
-            // 這裡可以手動構造或在 /login 後立即調用 /users/me 獲取資訊
-             user.value = {
-                id: res.id,
-                email: res.email,
-                username: res.username
-             }
-        }
+        // 🚨 修正這裡：強制構造完整的 user 物件
+        user.value = {
+            // 由於 API 沒有直接回傳這些欄位，我們從 Token Payload 和表單輸入推導
+            id: res.id || null, 
+            username: res.username || email.value.split('@')[0], 
+            email: email.value, // 使用表單輸入的 email
+            role: res.role || 'owner' // 假設角色為 'owner'
+        };
         
         // 舊的 localStorage 邏輯現在由 user 狀態處理，可移除，但為了兼容保留 user 存儲
         if (process.client) {

@@ -74,14 +74,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref ,computed } from 'vue';
+//引入 使用者狀態和Token狀態
+import { useAuthToken, useUser } from '~/composables/useAuth';
+
 
 // 假設您的 API Base URL 是 http://127.0.0.1:8000
-const API_URL = 'http://127.0.0.1:8000/create_hotel/'; // 假設 POST 端點是 /hotels/
+const API_URL = 'http://127.0.0.1:8000/hotels/create/'; // 假設 POST 端點是 /hotels/
 
 const loading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
+//獲取使用者狀態(token)
+const userState = useUser();
+const authToken = useAuthToken();
+// 🚩 檢查權限：確保已登入且角色為 'owner'
+console.log('使用者狀態:', userState.value);
+console.log('Token:', authToken.value);
+
+
+const isOwner = computed(() => {
+    // 檢查是否有 Token 並且 userState 中的 role 欄位是 'owner'
+    return !!authToken.value && userState.value && userState.value.role === 'owner';
+});
 
 // 🚩 表單數據的響應式狀態，結構需與 API 要求的 JSON 體一致
 const hotelData = ref({
@@ -93,28 +108,31 @@ const hotelData = ref({
 
 // 處理表單提交的邏輯
 const addHotel = async () => {
-  // 1. 重設訊息和狀態
+  // 1. 再次檢查權限
+    if (!isOwner.value) {
+        errorMessage.value = '您沒有權限執行此操作。';
+        return;
+    }
+  // 2. 重設訊息和狀態
   errorMessage.value = '';
   successMessage.value = '';
   loading.value = true;
 
-  // 2. 驗證價格是否為數字
+  // 3. 驗證價格是否為數字
   if (typeof hotelData.value.price !== 'number' || hotelData.value.price <= 0) {
     errorMessage.value = '請輸入有效的價格。';
     loading.value = false;
     return;
   }
   
-  // 3. 執行 API 請求 (POST)
+  // 4. 執行 API 請求 (POST)
   try {
-    const response = await $fetch(API_URL, {
-      method: 'POST',
-      body: hotelData.value, // 直接將響應式對象作為 JSON 體發送
-      // 🚩 注意：如果您的 API 需要驗證 (例如 Bearer Token)，您需要在 headers 中添加
-      // headers: {
-      //   'Authorization': `Bearer ${您的Token}` 
-      // }
-    });
+        // 🚩 核心：Token 會自動由 plugins/api-auth.js 加入 Header
+        const response = await $fetch(API_URL, {
+            method: 'POST',
+            body: hotelData.value, // JSON 數據
+            // 💡 無需手動添加 Authorization Header!
+        });
     
     // 4. 請求成功
     successMessage.value = `飯店資訊新增成功！ID: ${response.id || 'N/A'}`;
@@ -128,14 +146,16 @@ const addHotel = async () => {
     };
     
   } catch (error) {
-    // 6. 請求失敗或 API 返回錯誤
-    console.error('新增飯店失敗:', error);
-    // 嘗試從錯誤響應中獲取詳細訊息
-    errorMessage.value = error?.data?.detail || '新增失敗，請檢查 API 連線與資料格式。';
-    
-  } finally {
-    loading.value = false;
-  }
+        console.error('新增飯店失敗:', error);
+        // 如果後端返回 401/403，通常是權限問題
+        const apiDetail = error?.data?.detail 
+        errorMessage.value = apiDetail 
+            ? (typeof apiDetail === 'string' ? apiDetail : JSON.stringify(apiDetail))
+            : '新增失敗，請檢查權限或資料格式。';
+        
+    } finally {
+        loading.value = false;
+    }
 };
 </script>
 
