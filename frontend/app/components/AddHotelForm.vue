@@ -5,7 +5,12 @@
             <div class="card shadow p-4">
             <h3 class="mb-4 fw-bold text-primary">新增飯店資訊</h3>
 
-            <form @submit.prevent="addHotel">
+            <!-- 權限不足提示 -->
+            <div v-if="!isOwner" class="alert alert-warning text-center">
+                ⚠️ **權限不足：** 只有 **飯店業者 (Owner)** 才能新增飯店資訊。請登入或檢查權限。
+            </div>
+
+            <form @submit.prevent="addHotel" v-else>
                 
                 <div class="mb-3">
                 <label for="hotelName" class="form-label">飯店名稱</label>
@@ -74,80 +79,81 @@
 </template>
 
 <script setup>
-import { ref ,computed } from 'vue';
-//引入 使用者狀態和Token狀態
+import { ref ,computed, watch } from 'vue';
 import { useAuthToken, useUser } from '~/composables/useAuth';
 
 
 // 假設您的 API Base URL 是 http://127.0.0.1:8000
-const API_URL = 'http://127.0.0.1:8000/hotels/create/'; // 假設 POST 端點是 /hotels/
+const API_URL = 'http://127.0.0.1:8000/hotels/create'; // 🚨 移除結尾斜線，匹配後端 /hotels/create
 
 const loading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
+
 //獲取使用者狀態(token)
 const userState = useUser();
 const authToken = useAuthToken();
+
 // 🚩 檢查權限：確保已登入且角色為 'owner'
-console.log('使用者狀態:', userState.value);
-console.log('Token:', authToken.value);
-
-
 const isOwner = computed(() => {
-    // 檢查是否有 Token 並且 userState 中的 role 欄位是 'owner'
-    return !!authToken.value && userState.value && userState.value.role === 'owner';
+    // 檢查是否有 Token 並且 userState 中的 role 欄位是 'owner' 且 'id' 不為空
+    return !!authToken.value && userState.value && userState.value.role === 'owner' && userState.value.id;
 });
 
 // 🚩 表單數據的響應式狀態，結構需與 API 要求的 JSON 體一致
 const hotelData = ref({
-  hotel_name: '',
-  location: '',
-  room_type: '',
-  price: null, // 使用 null 或 0 作為初始數值
+    hotel_name: '',
+    location: '',
+    room_type: '',
+    price: null,
+    owner: 1, // 🚩 owner ID 欄位
 });
 
 // 處理表單提交的邏輯
 const addHotel = async () => {
-  // 1. 再次檢查權限
+    // 1. 再次檢查權限
     if (!isOwner.value) {
         errorMessage.value = '您沒有權限執行此操作。';
         return;
     }
-  // 2. 重設訊息和狀態
-  errorMessage.value = '';
-  successMessage.value = '';
-  loading.value = true;
+    
+    // 2. 核心：在發送前，設置 owner_id
+    // 🚨 這是關鍵步驟，確保 ID 被傳到後端
+    hotelData.value.owner = userState.value.id;
 
-  // 3. 驗證價格是否為數字
-  if (typeof hotelData.value.price !== 'number' || hotelData.value.price <= 0) {
-    errorMessage.value = '請輸入有效的價格。';
-    loading.value = false;
-    return;
-  }
-  
-  // 4. 執行 API 請求 (POST)
-  try {
-        // 🚩 核心：Token 會自動由 plugins/api-auth.js 加入 Header
+    errorMessage.value = '';
+    successMessage.value = '';
+    loading.value = true;
+
+    // 3. 驗證價格是否為數字
+    if (typeof hotelData.value.price !== 'number' || hotelData.value.price <= 0) {
+        errorMessage.value = '請輸入有效的價格。';
+        loading.value = false;
+        return;
+    }
+    
+    // 4. 執行 API 請求 (POST)
+    try {
         const response = await $fetch(API_URL, {
             method: 'POST',
-            body: hotelData.value, // JSON 數據
-            // 💡 無需手動添加 Authorization Header!
+            body: hotelData.value, // JSON 數據現在包含 owner_id
         });
-    
-    // 4. 請求成功
-    successMessage.value = `飯店資訊新增成功！ID: ${response.id || 'N/A'}`;
-    
-    // 5. 清空表單
-    hotelData.value = {
-      hotel_name: '',
-      location: '',
-      room_type: '',
-      price: null,
-    };
-    
-  } catch (error) {
+        
+        // 4. 請求成功
+        successMessage.value = `飯店資訊新增成功！ID: ${response.id || 'N/A'}`;
+        
+        // 5. 清空表單
+        hotelData.value = {
+            hotel_name: '',
+            location: '',
+            room_type: '',
+            price: null,
+            owner: null,
+        };
+        
+    } catch (error) {
         console.error('新增飯店失敗:', error);
-        // 如果後端返回 401/403，通常是權限問題
+        
         const apiDetail = error?.data?.detail 
         errorMessage.value = apiDetail 
             ? (typeof apiDetail === 'string' ? apiDetail : JSON.stringify(apiDetail))
@@ -157,6 +163,18 @@ const addHotel = async () => {
         loading.value = false;
     }
 };
+
+// 🚩 除錯：監聽 userState 變化並打印角色資訊 (保持不變)
+watch(userState, (newUser) => {
+    if (newUser) {
+        console.log('--- AddHotelForm 除錯資訊 ---');
+        console.log('Token 存在:', !!authToken.value);
+        console.log('當前用戶 ID:', newUser.id); 
+        console.log('當前用戶角色:', newUser.role);
+        console.log('是否為 Owner:', isOwner.value);
+        console.log('------------------------------');
+    }
+}, { immediate: true });
 </script>
 
 <style scoped>
