@@ -5,7 +5,6 @@
             <div class="card shadow p-4">
             <h3 class="mb-4 fw-bold text-primary">新增飯店資訊</h3>
 
-            <!-- 權限不足提示 -->
             <div v-if="!isOwner" class="alert alert-warning text-center">
                 ⚠️ **權限不足：** 只有 **飯店業者 (Owner)** 才能新增飯店資訊。請登入或檢查權限。
             </div>
@@ -82,9 +81,8 @@
 import { ref ,computed, watch } from 'vue';
 import { useAuthToken, useUser } from '~/composables/useAuth';
 
-
 // 假設您的 API Base URL 是 http://127.0.0.1:8000
-const API_URL = 'http://127.0.0.1:8000/hotels/create'; // 🚨 移除結尾斜線，匹配後端 /hotels/create
+const API_URL = 'http://127.0.0.1:8000/hotels/create'; 
 
 const loading = ref(false);
 const errorMessage = ref('');
@@ -96,17 +94,15 @@ const authToken = useAuthToken();
 
 // 🚩 檢查權限：確保已登入且角色為 'owner'
 const isOwner = computed(() => {
-    // 檢查是否有 Token 並且 userState 中的 role 欄位是 'owner' 且 'id' 不為空
     return !!authToken.value && userState.value && userState.value.role === 'owner' && userState.value.id;
 });
 
-// 🚩 表單數據的響應式狀態，結構需與 API 要求的 JSON 體一致
+// 🚩 表單數據：這裡不再包含 'owner' 欄位，保持乾淨
 const hotelData = ref({
     hotel_name: '',
     location: '',
     room_type: '',
-    price: null,
-    owner: 1, // 🚩 owner ID 欄位
+    price: null
 });
 
 // 處理表單提交的邏輯
@@ -116,39 +112,44 @@ const addHotel = async () => {
         errorMessage.value = '您沒有權限執行此操作。';
         return;
     }
-    
-    // 2. 核心：在發送前，設置 owner_id
-    // 🚨 這是關鍵步驟，確保 ID 被傳到後端
-    hotelData.value.owner = userState.value.id;
 
     errorMessage.value = '';
     successMessage.value = '';
     loading.value = true;
 
-    // 3. 驗證價格是否為數字
+    // 2. 驗證價格是否為數字
     if (typeof hotelData.value.price !== 'number' || hotelData.value.price <= 0) {
         errorMessage.value = '請輸入有效的價格。';
         loading.value = false;
         return;
     }
     
+    // 3. 準備 payload：只包含後端需要的這四個欄位
+    // 🚨 這裡不包含 owner ID，因為後端會從 Header 的 Token 自動解析
+    const payload = {
+        hotel_name: hotelData.value.hotel_name,
+        location: hotelData.value.location,
+        room_type: hotelData.value.room_type,
+        price: hotelData.value.price
+    };
+
     // 4. 執行 API 請求 (POST)
     try {
+        // 這裡不需要手動加 Header，因為您的 api-auth.js 會自動攔截並加入 Token
         const response = await $fetch(API_URL, {
             method: 'POST',
-            body: hotelData.value, // JSON 數據現在包含 owner_id
+            body: payload, // 傳送乾淨的 payload
         });
         
-        // 4. 請求成功
-        successMessage.value = `飯店資訊新增成功！ID: ${response.id || 'N/A'}`;
+        // 5. 請求成功
+        successMessage.value = `飯店資訊新增成功！ID: ${response.hotel_id || response.id || 'N/A'}`;
         
-        // 5. 清空表單
+        // 6. 清空表單
         hotelData.value = {
             hotel_name: '',
             location: '',
             room_type: '',
-            price: null,
-            owner: null,
+            price: null
         };
         
     } catch (error) {
@@ -164,7 +165,7 @@ const addHotel = async () => {
     }
 };
 
-// 🚩 除錯：監聽 userState 變化並打印角色資訊 (保持不變)
+// 🚩 除錯：監聽 userState 變化並打印角色資訊
 watch(userState, (newUser) => {
     if (newUser) {
         console.log('--- AddHotelForm 除錯資訊 ---');
