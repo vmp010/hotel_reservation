@@ -121,7 +121,7 @@ import { useUser, useLoggedIn } from '~/composables/useAuth';
 const config = useRuntimeConfig();
 const userState = useUser(); 
 const isLoggedIn = useLoggedIn();
-
+const authToken = useAuthToken(); // 2. 取得 Token
 // 2. 頁面切換狀態
 const currentTab = ref("cart"); 
 
@@ -129,27 +129,32 @@ const currentTab = ref("cart");
 const profile = ref({ name: "載入中...", email: "載入中...", phone: "", address: "", });
 
 // 4. 購物車資料獲取邏輯
-// 🚩 使用 useAsyncData 進行資料獲取，它會自動使用 $fetch 並帶上 Token
 const { 
     data: cartItems, 
     pending: cartPending, 
     error: cartError, 
     refresh: refreshCart 
 } = await useAsyncData(
-    // 唯一的 key (必須是唯一字串)
     'user-cart-items', 
-    // 獲取資料的函式
-    () => $fetch(`${config.public.apiBase}/carts/`), 
-    {
-        // 只有在登入狀態為 true 時才執行 fetch
-        lazy: true,
-        server: false, // 確保只在客戶端運行（因為它依賴登入狀態和 Token）
-        
-        // 💡 關鍵：監聽登入狀態和 Tab 切換
-        // 只有當 isLoggedIn 變成 true (剛登入) 或 currentTab 切換到 'cart' 時才重新獲取
-        watch: [isLoggedIn, currentTab], 
+    async () => {
+        // 🚨 3. 在發送請求前，檢查 Token 是否存在
+        const token = authToken.value;
+        if (!token) {
+            // 如果沒 Token，直接回傳空陣列，不要發請求 (避免 401)
+            return [];
+        }
 
-        // 如果請求失敗，預設返回空陣列
+        // 🚨 4. 手動加入 Authorization Header
+        return await $fetch(`${config.public.apiBase}/carts/`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+    }, 
+    {
+        lazy: true,
+        server: false,
+        watch: [isLoggedIn, currentTab], 
         default: () => [] 
     }
 );
