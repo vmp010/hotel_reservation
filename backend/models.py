@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String,Table
+from sqlalchemy import Column, ForeignKey, Integer, String,Table,Boolean
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -48,3 +48,17 @@ class Owner(Base):
     password = Column(String(100),nullable=False)
 
     hotels= relationship("Hotel", back_populates="owner_rel", passive_deletes=True)
+
+class Booking(Base):
+    __tablename__ = "bookings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id",ondelete="CASCADE"), nullable=False)
+    hotel_id = Column(Integer, ForeignKey("hotel_rooms.id",ondelete="CASCADE"), nullable=False)
+    checkin_date = Column(String(20), nullable=False) #入住日
+    checkout_date = Column(String(20), nullable=False)  #退房日
+
+    is_active = Column(Boolean, default=1)  # 1表示有效，0表示取消
+    
+    user_rel = relationship("User", passive_deletes=True)
+    hotel_rel = relationship("Hotel", passive_deletes=True)

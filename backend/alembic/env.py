@@ -11,7 +11,7 @@ from alembic import context
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 # 導入你的 models 和 database
-import models
+from models import *
 from database import Base
 
 # this is the Alembic Config object, which provides
