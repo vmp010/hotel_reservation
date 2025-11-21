@@ -31,3 +31,26 @@ async def create_hotel(hotel: HotelCreate,
     db.refresh(new_hotel)
     
     return {"message": f'Hotel {new_hotel.hotel_name} created successfully', "hotel_id": new_hotel.id}
+
+@router.delete("/delete/{hotel_id}", status_code=status.HTTP_200_OK)
+async def delete_hotel(hotel_id: int,
+                       db: db_dependency,
+                       current_owner: Owner = Depends(get_current_owner)):
+    
+    hotel = db.query(Hotel).filter(Hotel.id == hotel_id, Hotel.owner_id == current_owner.id).first()
+    
+    if not hotel:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hotel not found or not owned by you")
+    
+    db.delete(hotel)
+    db.commit()
+    
+    return {"message": f'Hotel {hotel.hotel_name} deleted successfully'}
+
+@router.get("/my_hotels", status_code=status.HTTP_200_OK)
+async def get_my_hotels(db: db_dependency,
+                        current_owner: Owner = Depends(get_current_owner)):
+    
+    hotels = db.query(Hotel).filter(Hotel.owner_id == current_owner.id).all()
+    
+    return {"hotels": hotels}

@@ -160,19 +160,19 @@ owner_dependency = Annotated[dict, Depends(auth.get_current_owner)]
 #         message="登入成功"
 #     )
 
-@app.post("/create_hotel/", response_model=HotelRoomCreate, status_code=status.HTTP_201_CREATED)
-async def create_room(hotel: HotelRoomCreate, db: db_dependency):
-    db_room = models.Hotel(
-        hotel_name=hotel.hotel_name,
-        location=hotel.location,
-        room_type=hotel.room_type,
-        price=hotel.price,
-        owner=hotel.owner
-    )
-    db.add(db_room)
-    db.commit()
-    db.refresh(db_room)
-    return db_room
+# @app.post("/create_hotel/", response_model=HotelRoomCreate, status_code=status.HTTP_201_CREATED)
+# async def create_room(hotel: HotelRoomCreate, db: db_dependency):
+#     db_room = models.Hotel(
+#         hotel_name=hotel.hotel_name,
+#         location=hotel.location,
+#         room_type=hotel.room_type,
+#         price=hotel.price,
+#         owner=hotel.owner
+#     )
+#     db.add(db_room)
+#     db.commit()
+#     db.refresh(db_room)
+#     return db_room
 
 @app.get("/hotels/")
 def read_hotels(db: db_dependency):
@@ -195,14 +195,14 @@ def read_index( db: db_dependency, limit: int = 3):
 
 
 
-@app.get("/delHotel/{hotel_id}")
-def delete_hotel(hotel_id: int, db: db_dependency):
-    hotel = db.query(models.Hotel).filter(models.Hotel.id == hotel_id).first()
-    if not hotel:
-        raise HTTPException(status_code=404, detail="Hotel not found")
-    db.delete(hotel)
-    db.commit()
-    return {"detail": "Hotel deleted successfully"}
+# @app.get("/delHotel/{hotel_id}")
+# def delete_hotel(hotel_id: int, db: db_dependency):
+#     hotel = db.query(models.Hotel).filter(models.Hotel.id == hotel_id).first()
+#     if not hotel:
+#         raise HTTPException(status_code=404, detail="Hotel not found")
+#     db.delete(hotel)
+#     db.commit()
+#     return {"detail": "Hotel deleted successfully"}
 
 
 # @app.post("/users/{user_id}/cart", response_model=HotelOut, status_code=status.HTTP_201_CREATED)

@@ -47,6 +47,9 @@ db_dependency = Annotated[Session, Depends(get_db)]
 @router.post("/register/user", status_code=201)
 def register_user(user: CreateUserRequest, db: db_dependency):
     hashed_password = bcrypt_context.hash(user.password)
+    if db.query(User).filter((User.username == user.username) | (User.email == user.email)).first():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username or email already exists")
+    
     create_user_model = User(username=user.username, email=user.email, password=hashed_password)
 
     db.add(create_user_model)

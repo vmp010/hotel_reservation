@@ -8,7 +8,7 @@ router = APIRouter(
     tags=["carts"]
 )
 
-@router.post("/{hotel_id}", status_code=status.HTTP_201_CREATED)
+@router.post("/add/{hotel_id}", status_code=status.HTTP_201_CREATED)
 async def add_hotel_to_cart(hotel_id: int, 
                             db: db_dependency,
                             user: User = Depends(get_current_user)):
@@ -38,7 +38,7 @@ async def get_user_cart(db: db_dependency,
     
     return db_user.carts
 
-@router.delete("/{hotel_id}", status_code=status.HTTP_200_OK)
+@router.delete("/delete/{hotel_id}", status_code=status.HTTP_200_OK)
 async def remove_hotel_from_cart(db: db_dependency,
                                 hotel_id: int, 
                                  user: User = Depends(get_current_user)):
