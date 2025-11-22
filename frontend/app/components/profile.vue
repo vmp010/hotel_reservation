@@ -75,8 +75,9 @@
                     :key="item.id" 
                     class="list-group-item d-flex justify-content-between align-items-center"
                 >
-                    {{ item.hotel_name }} ({{ item.room_type }})
+                    {{ item.hotel_name }} ({{ item.room_type }} {{ item.id }})
                     <span class="badge bg-primary rounded-pill">$ {{ item.price.toLocaleString() }}</span>
+                    <button @click="cancelHotel(item.id)" class="btn btn-warning">取消</button>
                 </li>
             </ul>
 
@@ -116,7 +117,8 @@
 
 <script setup>
 import { ref, watch, computed } from "vue";
-import { useUser, useLoggedIn } from '~/composables/useAuth'; 
+import { useUser, useLoggedIn ,useAuthToken } from '~/composables/useAuth'; 
+import Swal from 'sweetalert2'; // 引入 SweetAlert2
 
 const config = useRuntimeConfig();
 const userState = useUser(); 
@@ -127,6 +129,7 @@ const currentTab = ref("cart");
 
 // 3. 表單狀態 (Profile Form State - 保持不變)
 const profile = ref({ name: "載入中...", email: "載入中...", phone: "", address: "", });
+const isDelete = ref(false); // 控制刪除按鈕 loading 狀態
 
 // 4. 購物車資料獲取邏輯
 const { 
@@ -158,7 +161,63 @@ const {
         default: () => [] 
     }
 );
+//刪除
+const cancelHotel = async (hotelId, hotelName) => {
+    
+    const confirmDelete = await Swal.fire({
+        title: '確定要取消預定嗎？',
+        // 🚨 修正：使用傳進來的 hotelName
+        html: `您即將取消預定 <b>${hotelName || '此飯店'}</b>`,
+        icon: 'warning', // 改成 warning 比較符合刪除情境
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545', // 紅色代表危險操作
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '是的，取消預定！',
+        cancelButtonText: '保留'
+    });
 
+    if (!confirmDelete.isConfirmed) return;
+
+    isDelete.value = true;
+
+    try {
+        await $fetch(`${config.public.apiBase}/carts/delete/${hotelId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${authToken.value}`
+            }
+        });
+
+        // 🚨 修正 3：刪除成功後，重新抓取購物車資料，讓畫面更新
+        await refreshCart();
+
+        Swal.fire({
+            icon: 'success',
+            title: '刪除成功！',
+            text: '該房間已從您的購物車中移除。',
+            confirmButtonText: '確認',
+            timer: 1500 // 自動關閉
+        });
+
+    } catch (err) {
+        console.error('取消失敗', err);
+        let errorMsg = '無法取消，請稍後再試。';
+        if (err.response && err.response.status === 401) {
+            errorMsg = '登入已過期，請重新登入。';
+        } else if (err.data && err.data.detail) {
+            errorMsg = err.data.detail;
+        }
+
+        Swal.fire({
+            icon: 'error',
+            title: '取消失敗',
+            text: errorMsg
+        });
+
+    } finally {
+        isDelete.value = false;
+    }
+};
 // 計算購物車總價
 const totalCartPrice = computed(() => {
     if (!cartItems.value || cartItems.value.length === 0) return 0;
