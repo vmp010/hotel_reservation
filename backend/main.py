@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import bcrypt
 import auth
 from auth import get_current_user
-from routers import carts, hotels, booking
+from routers import carts, hotels, booking,reviews
 
 app = FastAPI()
 app.include_router(auth.router)
@@ -16,6 +16,8 @@ app.include_router(carts.router)
 
 app.include_router(hotels.router)
 app.include_router(booking.router)
+
+app.include_router(reviews.router)
 
 origins = [
     "http://localhost:3000",

@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from models import Hotel, Owner
-from auth import get_current_owner,db_dependency
+from auth import get_current_owner
+from auth import db_dependency
 from schemas import HotelCreate, HotelEditRequest
 
 router = APIRouter(

@@ -1,5 +1,5 @@
 from typing import List,Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 
 class HotleDisplay(BaseModel):
@@ -52,3 +52,23 @@ class HotelEditRequest(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# 使用者新增評論時的輸入
+class ReviewCreate(BaseModel):
+    hotel_id: int
+    booking_id: int
+    rating: int = Field(..., ge=1, le=5) # 限制 1~5 分
+    comment: str
+
+# 回傳給前端顯示用
+class ReviewResponse(BaseModel):
+    id: int
+    user_id: int
+    username: str # 為了前端顯示名字，我們之後手動填入
+    rating: int
+    comment: str
+    reply: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

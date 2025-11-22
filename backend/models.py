@@ -1,4 +1,5 @@
-from sqlalchemy import Column, ForeignKey, Integer, String,Table,Boolean
+from sqlalchemy import Column, ForeignKey, Integer, String,Table,Boolean,Text,DateTime
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -62,3 +63,29 @@ class Booking(Base):
     
     user_rel = relationship("User", passive_deletes=True)
     hotel_rel = relationship("Hotel", passive_deletes=True)
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # 關聯欄位
+    user_id = Column(Integer, ForeignKey("users.id"))
+    hotel_id = Column(Integer, ForeignKey("hotel_rooms.id")) # 對應你的 Hotel model
+    booking_id = Column(Integer, ForeignKey("bookings.id"))  # 🔥 關鍵：綁定訂單，確保是真實入住
+    
+    # 內容欄位
+    rating = Column(Integer, nullable=False) # 1~5 分
+    comment = Column(Text, nullable=True)    # 文字內容
+    
+    # 商家回覆 (Optional)
+    reply = Column(Text, nullable=True)      # 店家可以回覆
+    
+    # 時間欄位 (自動生成)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # 建立關聯，方便查詢
+    user = relationship("User", backref="reviews")
+    hotel = relationship("Hotel", backref="reviews")
+    booking = relationship("Booking")
