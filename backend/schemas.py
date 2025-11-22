@@ -38,3 +38,17 @@ class BookingResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+from pydantic import BaseModel
+from typing import Optional
+
+# 編輯時用的模型
+class HotelEditRequest(BaseModel):
+    hotel_name: Optional[str] = None
+    location: Optional[str] = None
+    room_type: Optional[str] = None
+    price: Optional[int] = None
+    
+
+    class Config:
+        from_attributes = True

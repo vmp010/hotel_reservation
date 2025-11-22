@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from models import Hotel, Owner
 from auth import get_current_owner,db_dependency
-from schemas import HotelCreate
+from schemas import HotelCreate, HotelEditRequest
 
 router = APIRouter(
     prefix="/hotels",
@@ -54,3 +54,30 @@ async def get_my_hotels(db: db_dependency,
     hotels = db.query(Hotel).filter(Hotel.owner_id == current_owner.id).all()
     
     return {"hotels": hotels}
+
+@router.patch("/edit/{hotel_id}", status_code=status.HTTP_200_OK)
+async def edit_hotel(hotel_id: int,
+                     hotel_request: HotelEditRequest,
+                     db: db_dependency,
+                     current_owner: Owner = Depends(get_current_owner)):
+    
+    hotel = db.query(Hotel).filter(Hotel.id == hotel_id, Hotel.owner_id == current_owner.id).first()
+    
+    if not hotel:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hotel not found or not owned by you")
+    
+    if hotel.owner_id != current_owner.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to edit this hotel")
+    
+    update_data = hotel_request.dict(exclude_unset=True) #沒加 exclude_unset=True 的話,會把 None 也更新掉
+
+    for key, value in update_data.items():
+        # 告訴 Python：請幫我把 hotel_model 裡面，名稱叫做 key (變數內容) 的那個欄位，改成 value
+        setattr(hotel, key, value)
+
+    db.add(hotel)
+    db.commit()
+    db.refresh(hotel)
+   
+    
+    return hotel
