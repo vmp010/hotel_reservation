@@ -75,7 +75,7 @@
                     :key="item.id" 
                     class="list-group-item d-flex justify-content-between align-items-center"
                 >
-                    {{ item.hotel_name }} ({{ item.room_type }} {{ item.id }})
+                    {{ item.hotel_name }} ({{ item.room_type }} )
                     <span class="badge bg-primary rounded-pill">$ {{ item.price.toLocaleString() }}</span>
                     <button @click="cancelHotel(item.id)" class="btn btn-warning">取消</button>
                 </li>

@@ -3,7 +3,10 @@
         
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
           <div class="container">
-            <NuxtLink class="navbar-brand fw-bold" to="/" >旅遊訂房平台</NuxtLink>
+            <NuxtLink class="navbar-brand fw-bold" to="/settingHotel" v-if="userState?.role === 'owner'" >旅遊訂房平台</NuxtLink>
+            <NuxtLink class="navbar-brand fw-bold" to="/" v-if="userState?.role === 'user'" >旅遊訂房平台</NuxtLink>
+            <NuxtLink class="navbar-brand fw-bold" to="/" v-if="!userState">旅遊訂房平台</NuxtLink>
+
             <button
               class="navbar-toggler"
               type="button"
@@ -51,8 +54,12 @@ import { onMounted } from 'vue'; // 引入 onMounted
 import { 
     performLogoutCleanup, 
     useLoggedIn, 
+    useUser,
     initializeUserSession // 這是您需要的初始化函式
 } from '~/composables/useAuth';
+
+// 取得使用者身份
+const userState = useUser();
 
 const router = useRouter();
 const loggedIn = useLoggedIn(); 

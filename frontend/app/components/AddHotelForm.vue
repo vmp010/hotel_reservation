@@ -12,9 +12,18 @@
                     <label class="form-label">地點</label>
                     <input v-model="hotelData.location" type="text" class="form-control" placeholder="台北市信義區" required />
                 </div>
+
                 <div class="mb-3">
                     <label class="form-label">房型</label>
-                    <input v-model="hotelData.room_type" type="text" class="form-control" placeholder="雙人房"  required />
+                    <select v-model="hotelData.room_type" class="form-select" required>
+                        <option value="" disabled>請選擇房型</option>
+                        <option value="單人房">單人房 (Single Room)</option>
+                        <option value="雙人房">雙人房 (Double Room)</option>
+                        <option value="四人房">四人房 (Quad Room)</option>
+                        <option value="豪華套房">豪華套房 (Deluxe Suite)</option>
+                        <option value="家庭房">家庭房 (Family Room)</option>
+                        <option value="總統套房">總統套房 (Presidential Suite)</option>
+                    </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">價格</label>
