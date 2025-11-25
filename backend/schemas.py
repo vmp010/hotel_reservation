@@ -1,6 +1,6 @@
 from typing import List,Optional
 from pydantic import BaseModel, Field, ConfigDict
-from datetime import datetime
+from datetime import date,datetime
 
 class HotleDisplay(BaseModel):
     id: int
@@ -39,8 +39,19 @@ class BookingResponse(BaseModel):
     class Config:
         from_attributes = True
 
-from pydantic import BaseModel
-from typing import Optional
+class CartItemResponse(BaseModel):
+    booking_id: int
+    hotel_name: str
+    location: str
+    room_type: str
+    price_per_night: int  # 單晚價格
+    check_in: date
+    check_out: date
+    total_days: int       # 住幾晚
+    total_price: int      # 總金額
+
+    class Config:
+        from_attributes = True
 
 # 編輯時用的模型
 class HotelEditRequest(BaseModel):
