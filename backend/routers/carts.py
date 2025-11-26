@@ -80,34 +80,26 @@ async def get_user_cart(db: db_dependency,
 
     return cart_items
 
-@router.delete("/delete/{hotel_id}", status_code=status.HTTP_200_OK)
+@router.delete("/delete/{booking_id}", status_code=status.HTTP_200_OK)
 async def remove_hotel_from_cart(db: db_dependency,
-                                hotel_id: int, 
+                                booking_id: int, 
                                  user: User = Depends(get_current_user)):
     
+    booking=db.query(Booking).filter(
+        Booking.id==booking_id,
+        Booking.user_id==user.id
+    ).first()
+
+    if not booking:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="booking not found")
+    
+    hotel=booking.hotel_rel
+
     db_user = db.query(User).filter(User.id == user.id).first()
-    if not db_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    hotel=db.query(Hotel).filter(Hotel.id==hotel_id).first()
-    if not hotel:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hotel not found")
-    
-    if hotel  in db_user.carts:
+    if hotel and db_user and (hotel in db_user.carts):
         db_user.carts.remove(hotel)
-    else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Hotel not in cart")
-
-    booking_to_delete=db.query(Booking).filter(
-        Booking.user_id==db_user.id,
-        Booking.hotel_id==hotel.id,
-        Booking.checkin_date>=date.today() #不將過去紀錄也刪除
-    ).all()
-
-    for booking in booking_to_delete:
-        db.delete(booking)
-
-    
-    
+        
+    db.delete(booking)
     db.commit()
     
     return None
