@@ -33,7 +33,7 @@ async def add_hotel_to_cart(hotel_id: int,
 @router.get("/", status_code=status.HTTP_200_OK)
 async def get_user_cart(db: db_dependency,
                         user: User = Depends(get_current_user)):
-    today_str=datetime.date.today().strftime("%Y-%m-%d")
+    today_str=date.today().strftime("%Y-%m-%d")
     user_bookings=db.query(Booking).filter(
         Booking.user_id==user.id,
         Booking.checkin_date>=today_str
