@@ -100,7 +100,7 @@ async def remove_hotel_from_cart(db: db_dependency,
     booking_to_delete=db.query(Booking).filter(
         Booking.user_id==db_user.id,
         Booking.hotel_id==hotel.id,
-        Booking.checkin_date>=datetime.date.today() #不將過去紀錄也刪除
+        Booking.checkin_date>=date.today() #不將過去紀錄也刪除
     ).all()
 
     for booking in booking_to_delete:
