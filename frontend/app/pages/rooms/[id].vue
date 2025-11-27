@@ -165,49 +165,45 @@ const submitBooking = async () => {
             checkout_date: formatDate(dateRange.value.end)
         };
 
-        // 🚀 關鍵修改：準備兩個請求
-        
-        // 請求 1: 建立預訂紀錄 (日期)
-        const bookingRequest = $fetch(`${config.public.apiBase}/bookings/create`, {
+        // 🚀 步驟 1: 先執行最重要的「訂房 (Booking)」
+        // 這邊我們不使用 Promise.all，而是單獨 await
+        await $fetch(`${config.public.apiBase}/bookings/create`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${authToken.value}` },
             body: payload
         });
 
-        // 請求 2: 加入購物車 (將該房間加入購物車)
-        const cartRequest = $fetch(`${config.public.apiBase}/carts/add/${route.params.id}`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${authToken.value}` }
-            // 根據您之前的 curl，這裡不需要 body，只要網址帶 ID 即可
-        });
+        // 🎉 到了這裡代表訂房已經成功寫入資料庫了！
+        // 接下來嘗試加入購物車，如果這裡失敗，不應該影響訂房成功的結果
 
-        // 🔥 使用 Promise.all 同時發送！(兩個都成功才會往下走)
-        await Promise.all([bookingRequest, cartRequest]);
+        try {
+            // 🚀 步驟 2: 嘗試加入購物車
+            await $fetch(`${config.public.apiBase}/carts/add/${route.params.id}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${authToken.value}` }
+            });
+        } catch (cartErr) {
+            // ⚠️ 如果購物車失敗 (例如已在購物車)，我們只記錄 log，不阻擋流程
+            console.warn('加入購物車失敗 (可能是重複加入)，但訂房已成功', cartErr);
+        }
 
-        // (D) 成功
-        Swal.fire('預訂成功', '已預訂日期並加入購物車！', 'success').then(() => {
-            // 轉跳到訂單頁面或付款頁面
+        // (D) 顯示成功訊息 (因為步驟 1 已經成功了)
+        Swal.fire('預訂成功', '我們期待您的光臨！', 'success').then(() => {
             router.push('/about'); 
         });
 
     } catch (err) {
-        console.error(err);
+        // 🚨 這裡捕捉的是「步驟 1 (訂房)」的錯誤
+        console.error('訂房流程錯誤', err);
         
-        // 錯誤處理 (只要其中一個失敗就會進來這裡)
         if (err.response && err.response.status === 400) {
             Swal.fire({
                 icon: 'error',
                 title: '哎呀！慢了一步 😱',
-                text: '剛剛您選的時段被別人訂走了，請重新選擇日期。',
-                confirmButtonText: '重新選擇'
-            }).then(() => {
-                 // 重新整理不可用日期
-                 refreshNuxtData();
+                text: '剛剛您選的時段被別人訂走了，請重新選擇日期。' // 這裡的錯誤訊息才是準確的
             });
         } else if (err.response && err.response.status === 401) {
             Swal.fire('登入過期', '請重新登入', 'error');
-        } else if (err.response && err.response.status === 422) {
-            Swal.fire('資料格式錯誤', '請檢查日期格式或後端參數', 'error');
         } else {
             Swal.fire('預訂失敗', '系統發生錯誤，請稍後再試', 'error');
         }
