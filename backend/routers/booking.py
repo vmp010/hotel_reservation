@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from auth import db_dependency
-from models import Booking, Hotel, User
-from schemas import BookingCreate, BookingResponse
-from auth import get_current_user
+from models import Booking, Hotel, User,Owner
+from schemas import BookingCreate, BookingResponse,OwnerBookingResponse
+from auth import get_current_user,get_current_owner
 from datetime import date
 
 router = APIRouter(
@@ -56,3 +56,33 @@ def create_booking(booking_request: BookingCreate,
     db.commit()
     db.refresh(new_booking)
     return new_booking
+
+@router.get("/owner/all", status_code=status.HTTP_200_OK, response_model=list[OwnerBookingResponse])
+async def get_owner_bookings(db: db_dependency,
+                             current_owner:Owner=Depends(get_current_owner)):
+    results=db.query(Booking).join(Hotel).join(User).filter(
+        Hotel.owner_id==current_owner.id
+    ).all()
+
+    response_list=[]
+    for booking in results:
+        
+        hotel=booking.hotel_rel
+        guest=booking.user_rel
+
+        if not hotel or not guest:
+            continue
+
+        response_list.append(OwnerBookingResponse(
+            booking_id=booking.id,
+            hotel_name=hotel.hotel_name,
+            room_type=hotel.room_type,
+            guest_name=guest.username,  
+            guest_email=guest.email,
+            check_in=booking.checkin_date,
+            check_out=booking.checkout_date,
+            is_active=booking.is_active
+        ))
+
+    return response_list
+        

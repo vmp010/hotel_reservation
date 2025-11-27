@@ -45,6 +45,7 @@ async def get_user_cart(db: db_dependency,
 
         if not hotel:
             continue
+        
         c_in_obj=date.today()
         c_out_obj=date.today()
         nights=1
@@ -98,7 +99,7 @@ async def remove_hotel_from_cart(db: db_dependency,
     db_user = db.query(User).filter(User.id == user.id).first()
     if hotel and db_user and (hotel in db_user.carts):
         db_user.carts.remove(hotel)
-        
+
     db.delete(booking)
     db.commit()
     

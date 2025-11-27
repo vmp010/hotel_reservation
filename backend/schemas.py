@@ -65,6 +65,20 @@ class HotelEditRequest(BaseModel):
         from_attributes = True
 
 
+class OwnerBookingResponse(BaseModel):
+    booking_id: int
+    hotel_name: str
+    room_type: str
+    guest_name: str    # 訂房人姓名
+    guest_email: str   # 訂房人 Email (方便聯絡)
+    check_in: str      # 入住日
+    check_out: str     # 退房日
+    is_active: bool    # 訂單狀態
+
+    class Config:
+        from_attributes = True
+
+
 # 使用者新增評論時的輸入
 class ReviewCreate(BaseModel):
     hotel_id: int
@@ -83,3 +97,5 @@ class ReviewResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
