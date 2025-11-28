@@ -89,7 +89,7 @@ async def get_user_cart(db: db_dependency,
         Booking.user_id==user.id,
         Booking.checkin_date>=today_str,
         Booking.status=="CART",
-        Booking.is_active=="True"
+        Booking.is_active==True
     ).all()
     
     cart_items=[]
