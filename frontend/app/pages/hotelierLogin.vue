@@ -16,6 +16,9 @@
         </button>
         <p v-if="error" class="text-danger mt-2">{{ error }}</p>
       </form>
+      <p class="text-center mt-3">
+        還沒有帳號？<NuxtLink to="/registerOwner">業主註冊</NuxtLink>
+      </p>
     </div>
   </div>
 </template>

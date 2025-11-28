@@ -40,6 +40,12 @@
               :to="`/rooms/${room.id}`"
               class="card h-100 shadow-sm border-0 room-card text-decoration-none text-dark"
             >
+              <img 
+                src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=600&auto=format&fit=crop" 
+                class="card-img-top" 
+                alt="Room Image"
+                style="height: 200px; object-fit: cover;"
+              >
               <div class="card-body d-flex flex-column"> 
                 <h5 class="card-title">{{ room.hotel_name }}</h5>
                 <p class="text-muted mb-1">{{ room.location }}</p>
@@ -67,6 +73,7 @@ import { ref, computed } from 'vue'
 
 definePageMeta({ middleware: 'auth' })
 
+// 注意：這裡假設您的 API 位址是正確的，如果不通請改回 http://localhost:8000/hotels
 const { data: rooms, pending, error } = await useFetch('http://127.0.0.1:8000/hotels')
 
 const selectedCategory = ref('全部')
@@ -103,6 +110,7 @@ const filteredRooms = computed(() => {
 <style scoped>
 .room-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden; /* 確保圖片放大時不會超出圓角 */
 }
 /* 讓 NuxtLink 保持區塊行為，確保 h-100 有效 */
 .card { 
