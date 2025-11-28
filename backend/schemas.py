@@ -53,6 +53,10 @@ class CartItemResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class CartAddRequest(BaseModel):
+    checkin_date: date
+    checkout_date: date
+
 # 編輯時用的模型
 class HotelEditRequest(BaseModel):
     hotel_name: Optional[str] = None
@@ -74,6 +78,20 @@ class OwnerBookingResponse(BaseModel):
     check_in: str      # 入住日
     check_out: str     # 退房日
     is_active: bool    # 訂單狀態
+
+    class Config:
+        from_attributes = True
+
+class UserBookingResponse(BaseModel):
+    booking_id: int
+    hotel_name: str
+    location: str
+    room_type: str
+    price_per_night: int
+    check_in: date      # 前端拿到的會是標準日期格式
+    check_out: date
+    total_price: int    # 我們會在後端算好總價傳過去
+    is_active: bool     # 顯示是「已預訂」還是「已取消」
 
     class Config:
         from_attributes = True

@@ -3,7 +3,7 @@ from models import User,Hotel,Booking
 from fastapi import APIRouter, Depends, HTTPException, status
 from auth import get_current_user, db_dependency
 from sqlalchemy.orm import Session
-from schemas import CartItemResponse
+from schemas import CartItemResponse,CartAddRequest
 
 router = APIRouter(
     prefix="/carts",
@@ -12,31 +12,84 @@ router = APIRouter(
 
 @router.post("/add/{hotel_id}", status_code=status.HTTP_201_CREATED)
 async def add_hotel_to_cart(hotel_id: int, 
-                            db: db_dependency,
-                            user: User = Depends(get_current_user)):
+    cart_request: CartAddRequest, # 🔥 新增：接收日期參數
+    db: db_dependency,
+    user: User = Depends(get_current_user)
+):
     
-    db_user = db.query(User).filter(User.id == user.id).first()
-    if not db_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    hotel=db.query(Hotel).filter(Hotel.id==hotel_id).first()
+    hotel=db.query(Hotel).filter(Hotel.id==hotel.id).first()
     if not hotel:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hotel not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="hotel not found")
+    hotel=db.query(Hotel).filter(Hotel.id==hotel_id).first()
+ 
     
-    if hotel in db_user.carts:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Hotel already in cart")
+    #🔥 資料驗證：退房日必須晚於入住日
+    if cart_request.checkout_date <= cart_request.checkin_date:
+        raise HTTPException(status_code=400, detail="退房日期必須晚於入住日期")
     
-    db_user.carts.append(hotel)
+    existing_cart_item = db.query(Booking).filter(
+        Booking.user_id == user.id,
+        Booking.hotel_id == hotel_id,
+        Booking.status == "CART", # 只檢查購物車裡的
+        Booking.checkin_date == str(cart_request.checkin_date), # 比對日期
+        Booking.checkout_date == str(cart_request.checkout_date)
+    ).first()
+    
+    if existing_cart_item:
+        raise HTTPException(status_code=400,detail="已於你的購物車")
+    
+    new_cart_item=Booking(
+        user_id=user.id,
+        hotel_id=hotel.id,
+        checkin_date=str(cart_request.checkin_date),   # 轉成字串存入
+        checkout_date=str(cart_request.checkout_date), # 轉成字串存入
+        status="CART",  # ✅ 關鍵：標記為購物車項目
+        is_active=True
+    )
+    db.add(new_cart_item)
     db.commit()
-    
-    return{"message":f'Hotel {hotel.hotel_name} added to cart successfully'}
 
-@router.get("/", status_code=status.HTTP_200_OK)
+    return {"message": "成功加入購物車"}
+
+#paid API
+@router.post("/checkout", status_code=status.HTTP_200_OK)
+async def checkout(
+    db: db_dependency,
+    user: User = Depends(get_current_user)
+):
+    # 1. 找出購物車裡所有的項目 (status='CART')
+    # 建議加上日期限制 (>= today)，避免幫過去過期的購物車項目結帳
+    today_str = date.today().strftime("%Y-%m-%d")
+    
+    cart_items = db.query(Booking).filter(
+        Booking.user_id == user.id,
+        Booking.status == "CART",
+        Booking.is_active == True,
+        Booking.checkin_date >= today_str
+    ).all()
+
+    if not cart_items:
+        raise HTTPException(status_code=400, detail="購物車是空的，無法結帳")
+
+    # 2. 🔥 核心動作：狀態轉換 (CART -> PAID)
+    for booking in cart_items:
+        booking.status = "PAID"
+        # 未來如果接金流 (綠界/Stripe)，會在這裡處理付款驗證
+    
+    # 3. 存檔
+    db.commit()
+
+    return {"message": "結帳成功", "count": len(cart_items)}
+
+@router.get("/", status_code=status.HTTP_200_OK,response_model=list[CartItemResponse])
 async def get_user_cart(db: db_dependency,
                         user: User = Depends(get_current_user)):
     today_str=date.today().strftime("%Y-%m-%d")
     user_bookings=db.query(Booking).filter(
         Booking.user_id==user.id,
-        Booking.checkin_date>=today_str
+        Booking.checkin_date>=today_str,
+        Booking.status=="CART",
+        Booking.is_active=="True"
     ).all()
     
     cart_items=[]

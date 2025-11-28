@@ -60,6 +60,7 @@ class Booking(Base):
     checkout_date = Column(String(20), nullable=False)  #退房日
 
     is_active = Column(Boolean, default=1)  # 1表示有效，0表示取消
+    status = Column(String(20), default="CART")
     
     user_rel = relationship("User", passive_deletes=True)
     hotel_rel = relationship("Hotel", passive_deletes=True)

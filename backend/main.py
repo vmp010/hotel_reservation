@@ -31,7 +31,7 @@ app.add_middleware(
 )
 
 # 註解掉 create_all，改用 Alembic 管理資料庫結構
-# models.Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 
 
 def get_db():
