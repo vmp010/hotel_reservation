@@ -15,11 +15,10 @@
                 新增飯店
             </button>
 
-            <button @click="$emit('update-tab', 'DelHotelList')"
-                :class="['btn', currentTab === 'DelHotelList' ? 'btn-warning' : 'btn-outline-warning']"
-                class="btn-lg mt-3 me-3" v-if="route.path === '/settingHotel'">
-                刪除飯店
-            </button>
+            <NuxtLink  class="btn btn-warning btn-lg mt-3 me-3" to="/homeView" v-if="route.path !== '/'">
+                我的飯店
+            </NuxtLink>
+            
 
             <button @click="$emit('update-tab', 'BookingList')"
                 class="btn-lg mt-3 me-3" v-if="route.path === '/settingHotel'"
