@@ -1,34 +1,35 @@
 <template>
     <header class="bg-light text-center py-5" id="page-header">
-      <div class="container">
-        <h1 class="display-5 fw-bold">歡迎來到旅遊訂房平台</h1>
-        <p class="lead text-muted">
-          輕鬆搜尋、比價、訂房，開啟你的完美假期 🌴
-        </p>
-        
-        <NuxtLink class="btn btn-primary btn-lg mt-3 me-3" to="/homeView" v-if="route.path !=='/settingHotel'">開始找房</NuxtLink>
-        
-        <button 
-            @click="$emit('update-tab', 'AddHotelForm')" 
-            :class="['btn', currentTab === 'AddHotelForm' ? 'btn-danger' : 'btn-outline-danger']" 
-            class="btn-lg mt-3 me-3"
-            v-if="route.path === '/settingHotel'"
-        >
-            新增飯店
-        </button>
-        
-        <button 
-            @click="$emit('update-tab', 'DelHotelList')" 
-            :class="['btn', currentTab === 'DelHotelList' ? 'btn-warning' : 'btn-outline-warning']" 
-            class="btn-lg mt-3 me-3"
-            v-if="route.path === '/settingHotel'"
-        >
-            刪除飯店
-        </button>
-        
-        <!-- <NuxtLink class="btn btn-danger btn-lg mt-3 me-3" to="/settingHotel" v-if="route.path !=='/settingHotel'">新增/刪除飯店</NuxtLink> -->
+        <div class="container">
+            <h1 class="display-5 fw-bold">歡迎來到旅遊訂房平台</h1>
+            <p class="lead text-muted">
+                輕鬆搜尋、比價、訂房，開啟你的完美假期 🌴
+            </p>
 
-      </div>
+            <NuxtLink class="btn btn-primary btn-lg mt-3 me-3" to="/homeView" v-if="route.path !== '/settingHotel'">開始找房
+            </NuxtLink>
+
+            <button @click="$emit('update-tab', 'AddHotelForm')"
+                :class="['btn', currentTab === 'AddHotelForm' ? 'btn-danger' : 'btn-outline-danger']"
+                class="btn-lg mt-3 me-3" v-if="route.path === '/settingHotel'">
+                新增飯店
+            </button>
+
+            <button @click="$emit('update-tab', 'DelHotelList')"
+                :class="['btn', currentTab === 'DelHotelList' ? 'btn-warning' : 'btn-outline-warning']"
+                class="btn-lg mt-3 me-3" v-if="route.path === '/settingHotel'">
+                刪除飯店
+            </button>
+
+            <button @click="$emit('update-tab', 'BookingList')"
+                class="btn-lg mt-3 me-3" v-if="route.path === '/settingHotel'"
+                :class="['btn', currentTab === 'BookingList' ? 'btn-primary' : 'btn-outline-primary']">
+                查看預訂名單
+            </button>
+
+            <!-- <NuxtLink class="btn btn-danger btn-lg mt-3 me-3" to="/settingHotel" v-if="route.path !=='/settingHotel'">新增/刪除飯店</NuxtLink> -->
+
+        </div>
     </header>
 </template>
 <script setup>

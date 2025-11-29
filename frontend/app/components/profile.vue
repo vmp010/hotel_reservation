@@ -124,6 +124,7 @@
 import { ref, watch, computed } from "vue";
 import { useUser, useLoggedIn, useAuthToken } from '~/composables/useAuth';
 import Swal from 'sweetalert2'; // 引入 SweetAlert2
+import { onMounted } from 'vue'; // 記得引入 onMounted
 
 const config = useRuntimeConfig();
 const userState = useUser();
@@ -162,7 +163,7 @@ const {
   {
     lazy: true,
     server: false,
-    watch: [isLoggedIn, currentTab],
+    watch: [isLoggedIn, currentTab , authToken.value],
     default: () => []
   }
 );
@@ -247,6 +248,15 @@ watch(userState, (newUser) => {
 function updateProfile() {
   console.log("資料已更新！(需要呼叫 API 儲存)", profile.value);
 }
+// 🚀 強制刷新邏輯
+onMounted(async () => {
+    // 等待 Nuxt 恢復使用者狀態 (如果有寫 initializeUserSession 更好)
+    // 這裡做一個簡單的延遲或檢查
+    if (authToken.value) {
+        console.log('🔄 頁面掛載，強制刷新購物車...');
+        await refreshCart();
+    }
+});
 </script>
 
 <style scoped>
