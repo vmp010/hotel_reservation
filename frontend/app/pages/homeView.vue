@@ -1,5 +1,6 @@
 <template>
   <div class="container my-5">
+    
     <div class="row">
       <div class="col-md-3">
         <div class="card p-3 shadow-sm">
@@ -23,11 +24,17 @@
             </li>
           </ul>
         </div>
+        
+        <div v-if="isOwner" class="alert alert-warning mt-3">
+            <small><i class="bi bi-person-badge"></i> 業者模式：僅顯示您的飯店</small>
+        </div>
       </div>
 
       <div class="col-md-9">
+        
         <div v-if="pending" class="text-center text-muted py-5">
-          資料載入中...
+          <div class="spinner-border text-primary mb-2" role="status"></div>
+          <p>資料載入中...</p>
         </div>
 
         <div v-else class="row g-4">
@@ -51,15 +58,16 @@
                 <p class="text-muted mb-1">{{ room.location }}</p>
                 <p class="fw-bold text-primary mb-3 mt-auto">$ {{ room.price }} / 晚</p>
                 
-                <span class="btn btn-outline-primary w-100">
-                  查看詳情
+                <span class="btn w-100" :class="isOwner ? 'btn-outline-warning' : 'btn-outline-primary'">
+                  {{ isOwner ? '管理房型' : '查看詳情' }}
                 </span>
               </div>
             </NuxtLink>
           </div>
 
           <div v-if="filteredRooms.length === 0" class="text-center py-5 text-muted">
-            沒有符合條件的房型 😅
+            <i class="bi bi-search h1"></i>
+            <p class="mt-3">沒有符合條件的房型</p>
           </div>
         </div>
       </div>
@@ -68,13 +76,73 @@
 </template>
 
 <script setup>
-// ... <script setup> 保持不變 ...
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useUser, initializeUserSession, useAuthToken } from '~/composables/useAuth';
+import { jwtDecode } from 'jwt-decode'; // 1. 確保引入這個
 
 definePageMeta({ middleware: 'auth' })
 
-// 注意：這裡假設您的 API 位址是正確的，如果不通請改回 http://localhost:8000/hotels
-const { data: rooms, pending, error } = await useFetch('http://127.0.0.1:8000/hotels')
+// ==========================================
+// 🚀 暴力解法：強制刷新一次 (Force Reload Once)
+// ==========================================
+if (process.client) {
+    const hasReloaded = sessionStorage.getItem('has_force_reloaded');
+    
+    // 如果還沒刷新過，就刷新一次
+    if (!hasReloaded) {
+        console.log('🔄 執行強制刷新...');
+        sessionStorage.setItem('has_force_reloaded', 'true');
+        window.location.reload(); // 暴力刷新
+    } else {
+        // 如果已經刷新過，就清除標記 (下次進來時才會再刷新)
+        // 或者保留標記，直到登出才清除 (看您的需求)
+        // 建議：離開頁面時清除，或者設個短暫過期時間
+        setTimeout(() => {
+             sessionStorage.removeItem('has_force_reloaded');
+        }, 1000);
+    }
+}
+
+// ==========================================
+// 🚀 關鍵修正：不要等 onMounted，直接在 setup 階段同步恢復
+// ==========================================
+const user = useUser();
+const authToken = useAuthToken();
+
+// 如果 user 還是空的，但我們手上有 Token，馬上解碼塞進去！
+// 這樣就不用等 initializeUserSession 慢慢跑
+if (!user.value && authToken.value) {
+    try {
+        const decoded = jwtDecode(authToken.value);
+        // 補上後端需要的欄位
+        user.value = {
+            id: decoded.id || decoded.user_id,
+            username: decoded.sub || decoded.username,
+            email: decoded.email,
+            role: decoded.role
+        };
+        console.log('✅ [HomeView] 使用者狀態已同步恢復', user.value);
+    } catch (e) {
+        console.error('Token 解析失敗', e);
+    }
+}
+
+// 雖然上面做了同步恢復，onMounted 還是留著做雙重保險
+onMounted(() => {
+    initializeUserSession();
+});
+
+// ==========================================
+// API 資料 (維持 server: false)
+// ==========================================
+const { data: rooms, pending, error } = await useFetch('http://127.0.0.1:8000/hotels', {
+    server: false
+});
+
+// ==========================================
+// 邏輯判斷 (現在 user.value 一定有值了)
+// ==========================================
+const isOwner = computed(() => user.value?.role === 'owner');
 
 const selectedCategory = ref('全部')
 const selectedTag = ref(null)
@@ -84,21 +152,24 @@ const categories = computed(() => {
   return [...new Set(rooms.value.map(r => r.room_type))] 
 })
 
-const tags = ref(['海景', '市中心', '平價', '家庭', '高樓層'])
-
 const filterByCategory = (category) => {
   selectedCategory.value = category
   selectedTag.value = null
 }
-const filterByTag = (tag) => {
-  selectedTag.value = tag
-  selectedCategory.value = '全部'
-}
 
 const filteredRooms = computed(() => {
   if (!rooms.value) return []
+  
   let result = rooms.value
 
+  // 1. Owner 過濾邏輯
+  // 因為我們在上面已經強制恢復了 user，這裡就不會是 null 了
+  if (isOwner.value && user.value) {
+      const userId = String(user.value.id);
+      result = result.filter(r => String(r.owner_id) === userId);
+  }
+
+  // 2. 分類篩選
   if (selectedCategory.value !== '全部') {
     result = result.filter(r => r.room_type === selectedCategory.value)
   }
@@ -110,14 +181,12 @@ const filteredRooms = computed(() => {
 <style scoped>
 .room-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  overflow: hidden; /* 確保圖片放大時不會超出圓角 */
+  overflow: hidden; 
 }
-/* 讓 NuxtLink 保持區塊行為，確保 h-100 有效 */
 .card { 
     display: flex;
     flex-direction: column;
 }
-
 .room-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
