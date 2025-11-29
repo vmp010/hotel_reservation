@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlmodel import func
 from models import Hotel, Owner
 from auth import get_current_owner
 from auth import db_dependency
@@ -47,6 +48,22 @@ async def delete_hotel(hotel_id: int,
     db.commit()
     
     return {"message": f'Hotel {hotel.hotel_name} deleted successfully'}
+
+@router.get("/owner/index/",status_code=status.HTTP_200_OK)
+async def get_index_hotels(db: db_dependency,
+                            current_owner: Owner = Depends(get_current_owner),
+                            limit: int = 3):
+    
+    hotels = db.query(Hotel)\
+                .group_by(Hotel.hotel_name)\
+                .filter(Hotel.owner_id == current_owner.id)\
+                .order_by(Hotel.id.desc())\
+                .limit(limit).all()
+    
+    if not hotels:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No hotels found")
+    
+    return hotels
 
 @router.get("/my_hotels", status_code=status.HTTP_200_OK)
 async def get_my_hotels(db: db_dependency,

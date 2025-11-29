@@ -61,7 +61,11 @@ def read_hotel(hotel_id: int, db: db_dependency):
 
 @app.get("/index/")
 def read_index( db: db_dependency, limit: int = 3):
-    hotels = db.query(models.Hotel).order_by(func.random()).limit(limit).all()
+    hotels = db.query(models.Hotel)\
+                .group_by(models.Hotel.hotel_name)\
+                .order_by(func.random())\
+                .limit(limit).all()
+    
     if not hotels:
         raise HTTPException(status_code=404, detail="Hotel not found")
     return hotels
