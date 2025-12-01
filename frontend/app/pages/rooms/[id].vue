@@ -127,12 +127,18 @@ const { data: room, pending } = await useFetch(
   () => `${config.public.apiBase}/hotels/${route.params.id}`
 );
 
-// ✨ 核心判斷：是否為這間房間的擁有者 (比對 ID)
 const isOwner = computed(() => {
-    // 確保資料都載入後再比對
+    // 必須符合三個條件：
+    // 1. 使用者已登入 (user.value 存在)
+    // 2. 房間資料已載入 (room.value 存在)
+    // 3. 使用者角色必須是 'owner' (防止 ID 撞號誤判)
+    // 4. 使用者 ID 等於 房間的 Owner ID
     if (user.value && room.value) {
-        // 如果登入者的 ID 等於 房間的 Owner ID
-        return user.value.id === room.value.owner_id;
+        // 🚨 關鍵修正：多加一個 role 的檢查
+        const isOwnerRole = user.value.role === 'owner';
+        const isIdMatch = user.value.id === room.value.owner_id;
+        
+        return isOwnerRole && isIdMatch;
     }
     return false;
 });
