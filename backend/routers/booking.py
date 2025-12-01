@@ -111,6 +111,57 @@ async def get_my_booking(
         
     return results
 
+@router.get("/UserHistory",response_model=list[UserBookingResponse],status_code=status.HTTP_200_OK)
+async def get_user_booking_history(db:db_dependency,
+                                   user:User=Depends(get_current_user)):
+    my_booking=db.query(Booking).filter(
+        Booking.user_id==user.id,
+        Booking.status=="PAID",
+        Booking.checkin_date<date.today().strftime("%Y-%m-%d")
+    ).all()
+
+    results=[]
+
+    for booking in my_booking:
+        hotel=booking.hotel_rel
+
+        if not hotel:
+            continue
+
+        c_in_obj = date.today()
+        c_out_obj = date.today()
+        nights = 1
+
+        try:
+            c_in_obj = datetime.strptime(booking.checkin_date, "%Y-%m-%d").date()
+            c_out_obj = datetime.strptime(booking.checkout_date, "%Y-%m-%d").date()
+            
+            delta = c_out_obj - c_in_obj
+            nights = delta.days
+        except:
+            print(f"日期轉換錯誤 ID: {booking.id}")
+            nights = 1
+
+        if nights < 1:
+            nights = 1
+            
+        total_price = hotel.price * nights
+
+        # 3. 組裝回傳資料
+        results.append(UserBookingResponse(
+            booking_id=booking.id,
+            hotel_name=hotel.hotel_name,
+            location=hotel.location,
+            room_type=hotel.room_type,
+            price_per_night=hotel.price,
+            check_in=c_in_obj,
+            check_out=c_out_obj,
+            total_price=total_price, # 算好的總價
+            is_active=booking.is_active
+        ))
+        
+    return results
+
 @router.get("/owner/all", status_code=status.HTTP_200_OK, response_model=list[OwnerBookingResponse])
 async def get_owner_bookings(db: db_dependency,
                              current_owner:Owner=Depends(get_current_owner)):
