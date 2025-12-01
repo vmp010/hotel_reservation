@@ -28,7 +28,7 @@
         <p v-if="success" class="text-success mt-2">{{ success }}</p>
       </form>
       <p class="text-center mt-3">
-        已經有業主帳號了？<NuxtLink to="/hotelierLogin">業主登入</NuxtLink>
+        已經有業主帳號了？<NuxtLink to="/login">業主登入</NuxtLink>
       </p>
     </div>
   </div>
