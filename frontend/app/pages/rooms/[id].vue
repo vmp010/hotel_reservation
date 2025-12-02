@@ -143,6 +143,10 @@ import { format, differenceInDays } from 'date-fns';
 const route = useRoute();
 const router = useRouter();
 const config = useRuntimeConfig();
+// 定義一個動態的 Base URL
+// 如果是在伺服器端 (Docker 內)，就用 host.docker.internal
+// 如果是在客戶端 (瀏覽器)，就用 localhost
+const apiBase = process.server ? 'http://host.docker.internal:8000' : 'http://localhost:8000';
 
 const authToken = useAuthToken();
 const user = useUser();
@@ -165,9 +169,13 @@ const reviewData = ref({
 // 取得ReviewList元件的參照
 const reviewListRef = ref(null);
 
-// 1. 獲取房間詳細資料
+// 1. 獲取房間詳細資料 (開啟 SSR，不加 server: false)
 const { data: room, pending } = await useFetch(
-    () => `${config.public.apiBase}/hotels/${route.params.id}`
+  `/hotels/${route.params.id}`, // 這裡只寫路徑
+  {
+    baseURL: apiBase, // 這裡帶入動態網址
+    key: `room-${route.params.id}` // 🚨 關鍵：必須設定 key，不然 Nuxt 會以為前後端資料不一致
+  }
 );
 
 // 判斷是否為 Owner

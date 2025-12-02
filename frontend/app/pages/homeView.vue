@@ -83,27 +83,6 @@ import { jwtDecode } from 'jwt-decode'; // 1. 確保引入這個
 definePageMeta({ middleware: 'auth' })
 
 // ==========================================
-// 🚀 暴力解法：強制刷新一次 (Force Reload Once)
-// ==========================================
-if (process.client) {
-    const hasReloaded = sessionStorage.getItem('has_force_reloaded');
-    
-    // 如果還沒刷新過，就刷新一次
-    if (!hasReloaded) {
-        console.log('🔄 執行強制刷新...');
-        sessionStorage.setItem('has_force_reloaded', 'true');
-        window.location.reload(); // 暴力刷新
-    } else {
-        // 如果已經刷新過，就清除標記 (下次進來時才會再刷新)
-        // 或者保留標記，直到登出才清除 (看您的需求)
-        // 建議：離開頁面時清除，或者設個短暫過期時間
-        setTimeout(() => {
-             sessionStorage.removeItem('has_force_reloaded');
-        }, 1000);
-    }
-}
-
-// ==========================================
 // 🚀 關鍵修正：不要等 onMounted，直接在 setup 階段同步恢復
 // ==========================================
 const user = useUser();
@@ -114,17 +93,13 @@ const authToken = useAuthToken();
 if (!user.value && authToken.value) {
     try {
         const decoded = jwtDecode(authToken.value);
-        // 補上後端需要的欄位
         user.value = {
             id: decoded.id || decoded.user_id,
             username: decoded.sub || decoded.username,
             email: decoded.email,
             role: decoded.role
         };
-        console.log('✅ [HomeView] 使用者狀態已同步恢復', user.value);
-    } catch (e) {
-        console.error('Token 解析失敗', e);
-    }
+    } catch (e) { console.error(e); }
 }
 
 // 雖然上面做了同步恢復，onMounted 還是留著做雙重保險

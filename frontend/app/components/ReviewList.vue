@@ -59,6 +59,10 @@ import Swal from 'sweetalert2';
 import { useAuthToken, useUser } from '~/composables/useAuth'; // 引入 Auth
 // 2. 定義可以發送的事件
 const emit = defineEmits(['review-deleted']);
+// 定義一個動態的 Base URL
+// 如果是在伺服器端 (Docker 內)，就用 host.docker.internal
+// 如果是在客戶端 (瀏覽器)，就用 localhost
+const apiBase = process.server ? 'http://host.docker.internal:8000' : 'http://localhost:8000';
 
 const props = defineProps({
     hotelId: {
@@ -73,10 +77,11 @@ const user = useUser(); // 取得目前登入者
 
 // 呼叫 API: GET /reviews/{hotel_id}
 const { data: reviews, pending, refresh } = await useFetch(
-    () => `${config.public.apiBase}/reviews/${props.hotelId}`,
+    `/reviews/${props.hotelId}`,
     {
+        baseURL: apiBase,
+        key: `reviews-${props.hotelId}`, // 🚨 記得加 key
         lazy: true, 
-        server: false, 
         default: () => []
     }
 );
