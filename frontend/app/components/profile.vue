@@ -1,16 +1,13 @@
 <template>
   <div class="container py-5">
 
-    <!-- 1. 載入中/未登入的 fallback 畫面 (v-else) -->
     <div v-if="!userState" class="text-center py-5">
       <div class="spinner-border text-primary" role="status"></div>
-      <p class="mt-3 text-muted">正在載入使用者資料或您尚未登入...</p>
+      <p class="mt-3 text-muted">正在載入使用者資料...</p>
     </div>
 
-    <!-- 2. 主內容：當 userState 存在時才渲染 (v-if) -->
     <div v-else class="row">
 
-      <!-- 左側導覽 (保持不變) -->
       <div class="col-md-4 mb-4">
         <div class="card shadow-sm text-center p-4">
           <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="rounded-circle mx-auto mb-3"
@@ -19,17 +16,29 @@
           <p class="text-muted mb-3">{{ userState.email || '無電子郵件' }}</p>
           <hr />
           <div class="text-start px-2 mb-3">
-            <p class="mb-1"><strong>角色：</strong>{{ userState.role === 'owner' ? '飯店業者' : '一般用戶' }}</p>
+            <p class="mb-1"><strong>角色：</strong>
+              <span :class="userState.role === 'owner' ? 'text-primary fw-bold' : ''">
+                {{ userState.role === 'owner' ? '飯店業者' : '一般用戶' }}
+              </span>
+            </p>
             <p class="mb-1"><strong>電話：</strong>{{ userState.phone || '0912-345-678' }}</p>
             <p class="mb-1"><strong>生日：</strong>{{ userState.birthday || '2000/01/01' }}</p>
             <p class="mb-1"><strong>地址：</strong>{{ userState.address || '台北市中正區' }}</p>
           </div>
           <hr />
+
           <div class="d-grid gap-2">
-            <button class="btn" :class="currentTab === 'cart' ? 'btn-primary' : 'btn-outline-primary'"
-              @click="currentTab = 'cart'">
+            <button v-if="userState.role === 'user'" class="btn"
+              :class="currentTab === 'cart' ? 'btn-primary' : 'btn-outline-primary'" @click="currentTab = 'cart'">
               <i class="bi bi-cart-fill me-2"></i> 購物車 ({{ cartItems?.length || 0 }})
             </button>
+
+            <button v-if="userState.role === 'owner'" class="btn"
+              :class="currentTab === 'dashboard' ? 'btn-primary' : 'btn-outline-primary'"
+              @click="currentTab = 'dashboard'">
+              <i class="bi bi-speedometer2 me-2"></i> 業績儀表板
+            </button>
+
             <button class="btn" :class="currentTab === 'profile' ? 'btn-primary' : 'btn-outline-primary'"
               @click="currentTab = 'profile'">
               <i class="bi bi-person-lines-fill me-2"></i> 編輯個人資料
@@ -38,26 +47,71 @@
         </div>
       </div>
 
-      <!-- 右側內容 -->
       <div class="col-md-8">
-        <div class="card shadow-sm p-4">
-          <!-- 購物車 -->
-          <div v-if="currentTab === 'cart'">
+        <div class="card shadow-sm p-4 h-100">
+
+          <div v-if="currentTab === 'dashboard' && userState.role === 'owner'">
+            <h4 class="mb-4 fw-bold text-primary">
+              <i class="bi bi-graph-up-arrow me-2"></i>營運概況
+            </h4>
+
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <div class="card bg-primary text-white h-100 border-0 shadow-sm">
+                  <div class="card-body text-center p-4">
+                    <i class="bi bi-building display-4 opacity-50"></i>
+                    <h2 class="display-5 fw-bold mt-2">{{ myHotels?.length || 0 }}</h2>
+                    <p class="card-text text-white-50">擁有飯店數</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card bg-success text-white h-100 border-0 shadow-sm">
+                  <div class="card-body text-center p-4">
+                    <i class="bi bi-calendar-check display-4 opacity-50"></i>
+                    <h2 class="display-5 fw-bold mt-2">{{ bookings?.length || 0 }}</h2>
+                    <p class="card-text text-white-50">總訂單數</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h5 class="mb-3 fw-bold">快速管理</h5>
+            <div class="list-group">
+              <NuxtLink to="/settingHotel"
+                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                <div>
+                  <i class="bi bi-pencil-square me-2 text-primary"></i>
+                  <strong>管理我的飯店</strong>
+                  <div class="small text-muted ms-4">新增、修改或刪除飯店資訊</div>
+                </div>
+                <i class="bi bi-chevron-right text-muted"></i>
+              </NuxtLink>
+              <button
+                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3"
+                @click="refreshDashboard">
+                <div>
+                  <i class="bi bi-arrow-clockwise me-2 text-success"></i>
+                  <strong>重新整理數據</strong>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div v-else-if="currentTab === 'cart' && userState.role === 'user'">
             <h4 class="mb-4">
               <i class="bi bi-cart-fill me-2"></i> 我的購物車
             </h4>
 
-            <!-- 載入中狀態 -->
-            <div v-if="cartPending" class="text-center text-muted">
-              <i class="bi bi-arrow-clockwise h4 spin"></i> 載入購物車項目中...
+            <div v-if="cartPending" class="text-center text-muted py-5">
+              <div class="spinner-border text-primary mb-2" role="status"></div>
+              <p>載入購物車...</p>
             </div>
 
-            <!-- 錯誤狀態 -->
             <div v-else-if="cartError" class="alert alert-danger text-center">
-              載入購物車失敗：{{ cartError.message || 'API 錯誤' }}
+              載入失敗：{{ cartError.message || '無法連線' }}
             </div>
 
-            <!-- 購物車內容 -->
             <ul v-else-if="cartItems && cartItems.length > 0" class="list-group">
               <li v-for="item in cartItems" :key="item.booking_id"
                 class="list-group-item d-flex justify-content-between align-items-center">
@@ -68,38 +122,35 @@
                     {{ item.check_in }} ~ {{ item.check_out }} ({{ item.total_days }}晚)
                   </small>
                 </div>
-
                 <div class="d-flex align-items-center">
                   <span class="badge bg-primary rounded-pill me-3 fs-6">
                     $ {{ (item.total_price || 0).toLocaleString() }}
                   </span>
-
                   <button @click="cancelHotel(item.booking_id, item.hotel_name)" class="btn btn-outline-danger btn-sm"
                     :disabled="isDelete">
-                    <i class="bi bi-trash"></i> 取消
+                    <i class="bi bi-trash"></i>
                   </button>
                 </div>
               </li>
             </ul>
 
-            <!-- 購物車為空 -->
             <div v-else class="alert alert-info text-center">
               購物車目前沒有任何項目。
             </div>
 
-            <div class="text-end mt-4">
-              <button class="btn btn-success">
-                <i class="bi bi-credit-card me-2"></i> 前往結帳 (總計：$ {{ totalCartPrice.toLocaleString() }})
+            <div class="text-end mt-4" v-if="cartItems?.length > 0">
+              <button class="btn btn-success btn-lg" @click="handleCheckout" :disabled="isCheckingOut">
+                <span v-if="isCheckingOut" class="spinner-border spinner-border-sm me-2"></span>
+                <i v-else class="bi bi-credit-card me-2"></i>
+                {{ isCheckingOut ? '結帳處理中...' : `前往結帳 (總計：$ ${totalCartPrice.toLocaleString()})` }}
               </button>
             </div>
           </div>
 
-          <!-- 編輯個人資料 (保持不變) -->
-          <div v-if="currentTab === 'profile'">
+          <div v-else-if="currentTab === 'profile'">
             <h4 class="mb-4">
               <i class="bi bi-pencil-square me-2"></i> 編輯個人資料
             </h4>
-            <!-- ... (表單內容) ... -->
             <form @submit.prevent="updateProfile">
               <div class="mb-3"><label class="form-label">姓名</label><input v-model="profile.name" type="text"
                   class="form-control" /></div>
@@ -114,6 +165,7 @@
               </div>
             </form>
           </div>
+
         </div>
       </div>
     </div>
@@ -121,157 +173,183 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from "vue";
-import { useUser, useLoggedIn, useAuthToken } from '~/composables/useAuth';
-import Swal from 'sweetalert2'; // 引入 SweetAlert2
-import { onMounted } from 'vue'; // 記得引入 onMounted
+import { ref, watch, computed, onMounted } from "vue";
+import { useRouter } from 'vue-router';
+import { useUser, useLoggedIn, useAuthToken, initializeUserSession } from '~/composables/useAuth';
+import Swal from 'sweetalert2';
 
 const config = useRuntimeConfig();
 const userState = useUser();
 const isLoggedIn = useLoggedIn();
-const authToken = useAuthToken(); // 2. 取得 Token
-// 2. 頁面切換狀態
-const currentTab = ref("cart");
+const authToken = useAuthToken();
+const router = useRouter();
 
-// 3. 表單狀態 (Profile Form State - 保持不變)
-const profile = ref({ name: "載入中...", email: "載入中...", phone: "", address: "", });
-const isDelete = ref(false); // 控制刪除按鈕 loading 狀態
+// 預設 Tab 狀態
+const currentTab = ref('');
 
-// 4. 購物車資料獲取邏輯
-const {
-  data: cartItems,
-  pending: cartPending,
-  error: cartError,
-  refresh: refreshCart
-} = await useAsyncData(
+// 資料狀態
+const profile = ref({ name: "", email: "", phone: "", address: "" });
+const isDelete = ref(false);
+
+// Owner 專用資料
+const myHotels = ref([]);
+const bookings = ref([]);
+// 新增結帳狀態
+const isCheckingOut = ref(false);
+
+// 🛒 結帳功能
+const handleCheckout = async () => {
+    // 1. 跳出確認視窗
+    const result = await Swal.fire({
+        title: '確定要結帳嗎？',
+        html: `總金額：<b class="text-success">$${totalCartPrice.value.toLocaleString()}</b><br>確認後將完成訂單。`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754', // 綠色
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '是的，付款',
+        cancelButtonText: '再等等'
+    });
+
+    if (!result.isConfirmed) return;
+
+    // 2. 開始結帳
+    isCheckingOut.value = true;
+    try {
+        // 呼叫 API: POST /carts/checkout
+        const res = await $fetch(`${config.public.apiBase}/carts/checkout`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken.value}`
+            }
+        });
+
+        // 3. 結帳成功
+        await Swal.fire({
+            icon: 'success',
+            title: '付款成功！',
+            text: res.message || '您的訂單已完成，感謝您的預訂！',
+            confirmButtonText: '太棒了'
+        });
+
+        // 4. 清空購物車畫面 (重新抓取，應該會變空的)
+        refreshCart();
+
+    } catch (err) {
+        console.error('結帳失敗', err);
+        Swal.fire({
+            icon: 'error',
+            title: '結帳失敗',
+            text: err.data?.detail || '系統發生錯誤，請稍後再試。'
+        });
+    } finally {
+        isCheckingOut.value = false;
+    }
+};
+// 初始化邏輯
+onMounted(async () => {
+  // 1. 確保身分恢復
+  await initializeUserSession();
+
+  // 2. 根據身分決定預設 Tab 與載入資料
+  if (userState.value) {
+    syncProfileData(userState.value);
+
+    if (userState.value.role === 'owner') {
+      currentTab.value = 'dashboard';
+      refreshDashboard(); // 載入儀表板數據
+    } else {
+      currentTab.value = 'cart';
+      refreshCart(); // 載入購物車
+    }
+  }
+});
+
+// 監聽 userState 變化
+watch(userState, (newUser) => {
+  if (newUser) {
+    syncProfileData(newUser);
+    if (!currentTab.value) {
+      currentTab.value = newUser.role === 'owner' ? 'dashboard' : 'cart';
+    }
+  }
+}, { immediate: true });
+
+function syncProfileData(user) {
+  profile.value.name = user.username || '無用戶名';
+  profile.value.email = user.email || '無電子郵件';
+  profile.value.phone = user.phone || '';
+  profile.value.address = user.address || '';
+}
+
+// ==========================================
+// 🟥 Owner 邏輯：儀表板數據 (移除總收益計算)
+// ==========================================
+const refreshDashboard = async () => {
+  if (!authToken.value) return;
+
+  try {
+    const [hotelsRes, bookingsRes] = await Promise.all([
+      $fetch(`${config.public.apiBase}/hotels/my_hotels`, { headers: { 'Authorization': `Bearer ${authToken.value}` } }),
+      $fetch(`${config.public.apiBase}/bookings/owner/all`, { headers: { 'Authorization': `Bearer ${authToken.value}` } })
+    ]);
+
+    myHotels.value = hotelsRes.hotels || [];
+    bookings.value = bookingsRes || [];
+
+  } catch (e) {
+    console.error('儀表板資料載入失敗', e);
+  }
+};
+
+// ==========================================
+// 🟦 User 邏輯：購物車 (使用 useAsyncData)
+// ==========================================
+const { data: cartItems, pending: cartPending, error: cartError, refresh: refreshCart } = await useAsyncData(
   'user-cart-items',
   async () => {
-    // 🚨 3. 在發送請求前，檢查 Token 是否存在
-    const token = authToken.value;
-    if (!token) {
-      // 如果沒 Token，直接回傳空陣列，不要發請求 (避免 401)
-      return [];
-    }
-
-    // 🚨 4. 手動加入 Authorization Header
+    if (!authToken.value || userState.value?.role !== 'user') return [];
     return await $fetch(`${config.public.apiBase}/carts/`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${authToken.value}` }
     });
   },
-  {
-    lazy: true,
-    server: false,
-    watch: [isLoggedIn, currentTab , authToken.value],
-    default: () => []
-  }
+  { lazy: true, server: false, default: () => [] }
 );
-//刪除
-const cancelHotel = async (hotelId, hotelName) => {
 
+const totalCartPrice = computed(() => {
+  if (!cartItems.value?.length) return 0;
+  return cartItems.value.reduce((sum, item) => sum + (item.total_price || 0), 0);
+});
+
+const cancelHotel = async (bookingId, hotelName) => {
   const confirmDelete = await Swal.fire({
-    title: '確定要取消預定嗎？',
-    // 🚨 修正：使用傳進來的 hotelName
-    html: `您即將取消預定 <b>${hotelName || '此飯店'}</b>`,
-    icon: 'warning', // 改成 warning 比較符合刪除情境
+    title: '確定取消？',
+    html: `取消預定 <b>${hotelName}</b>`,
+    icon: 'warning',
     showCancelButton: true,
-    confirmButtonColor: '#dc3545', // 紅色代表危險操作
-    cancelButtonColor: '#6c757d',
-    confirmButtonText: '是的，取消預定！',
-    cancelButtonText: '保留'
+    confirmButtonColor: '#dc3545',
+    confirmButtonText: '取消預定'
   });
 
   if (!confirmDelete.isConfirmed) return;
 
   isDelete.value = true;
-
   try {
-    await $fetch(`${config.public.apiBase}/carts/delete/${hotelId}`, {
+    await $fetch(`${config.public.apiBase}/carts/delete/${bookingId}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${authToken.value}`
-      }
+      headers: { 'Authorization': `Bearer ${authToken.value}` }
     });
-
-    // 🚨 修正 3：刪除成功後，重新抓取購物車資料，讓畫面更新
     await refreshCart();
-
-    Swal.fire({
-      icon: 'success',
-      title: '刪除成功！',
-      text: '該房間已從您的購物車中移除。',
-      confirmButtonText: '確認',
-      timer: 1500 // 自動關閉
-    });
-
+    Swal.fire({ icon: 'success', title: '已取消', timer: 1500, showConfirmButton: false });
   } catch (err) {
-    console.error('取消失敗', err);
-    let errorMsg = '無法取消，請稍後再試。';
-    if (err.response && err.response.status === 401) {
-      errorMsg = '登入已過期，請重新登入。';
-    } else if (err.data && err.data.detail) {
-      errorMsg = err.data.detail;
-    }
-
-    Swal.fire({
-      icon: 'error',
-      title: '取消失敗',
-      text: errorMsg
-    });
-
+    Swal.fire('失敗', err.response?.status === 401 ? '登入過期' : '系統錯誤', 'error');
   } finally {
     isDelete.value = false;
   }
 };
-// 計算購物車總價
-const totalCartPrice = computed(() => {
-    if (!cartItems.value || cartItems.value.length === 0) return 0;
-    // 🚨 修改：使用 item.total_price
-    return cartItems.value.reduce((sum, item) => sum + (item.total_price || 0), 0);
-});
 
-
-// 5. 使用 watch 監聽 userState 的變化，並同步到 profile 表單 (保持不變)
-watch(userState, (newUser) => {
-  if (newUser) {
-    profile.value.name = newUser.username || '無用戶名';
-    profile.value.email = newUser.email || '無電子郵件';
-    profile.value.phone = newUser.phone || '';
-    profile.value.address = newUser.address || '';
-    // 💡 登入狀態改變時，強制刷新購物車
-    refreshCart();
-  }
-}, { immediate: true });
-
-// 6. 處理表單提交 (未來會呼叫 API)
 function updateProfile() {
-  console.log("資料已更新！(需要呼叫 API 儲存)", profile.value);
+  console.log("資料已更新！", profile.value);
+  Swal.fire('成功', '個人資料已更新 (模擬)', 'success');
 }
-// 🚀 強制刷新邏輯
-onMounted(async () => {
-    // 等待 Nuxt 恢復使用者狀態 (如果有寫 initializeUserSession 更好)
-    // 這裡做一個簡單的延遲或檢查
-    if (authToken.value) {
-        console.log('🔄 頁面掛載，強制刷新購物車...');
-        await refreshCart();
-    }
-});
 </script>
-
-<style scoped>
-/* 簡單的 CSS 讓載入圖標轉動 */
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-</style>
