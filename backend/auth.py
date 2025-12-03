@@ -129,20 +129,20 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 
   owner=db.query(Owner).filter(Owner.email == input_email).first()
   if owner and bcrypt_context.verify(input_password, owner.password):
-      token=create_access_token(owner.owner_name,owner.id,"owner",timedelta(minutes=30))
+      token=create_access_token(owner.owner_name,owner.id,"owner",email=owner.email,expires_delta=timedelta(minutes=30))
       return {"access_token":token,"token_type":"bearer","role":"owner"}
   
   user=db.query(User).filter(User.email == input_email).first()
   if user and bcrypt_context.verify(input_password, user.password):
-      token=create_access_token(user.username,user.id,"user",timedelta(minutes=30))
+      token=create_access_token(user.username,user.id,"user",email=user.email,expires_delta=timedelta(minutes=30))
       return {"access_token":token,"token_type":"bearer","role":"user"}
   raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,
       detail="Incorrect username or password",
   )
 
-def create_access_token(username: str, user_id: int,role:str, expires_delta: timedelta):
-    encode={"sub":username,"id":user_id,"role":role}
+def create_access_token(username: str, user_id: int,role:str, email:str, expires_delta: timedelta):
+    encode={"sub":username,"id":user_id,"role":role,"email":email}
     expires=datetime.utcnow()+expires_delta
     encode.update({"exp":expires})
     return jwt.encode(encode,SECRET_KEY,algorithm=ALGORITHM)
