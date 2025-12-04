@@ -54,7 +54,7 @@
                   <div class="text-danger"><i class="bi bi-box-arrow-right me-1"></i>{{ item.check_out }}</div>
                 </td>
                 <td>
-                  <span v-if="item.is_active" class="badge bg-success rounded-pill">已預訂</span>
+                  <span v-if="item.is_active" class="badge bg-success rounded-pill">已付款</span>
                   <span v-else class="badge bg-secondary rounded-pill">已取消</span>
                 </td>
               </tr>
@@ -64,7 +64,7 @@
 
         <div v-if="bookings.length > itemsPerPage" class="d-flex justify-content-between align-items-center p-3 border-top bg-light">
             <span class="text-muted small">
-                顯示第 {{ startIndex + 1 }} 到 {{ Math.min(endIndex, bookings.length) }} 筆，共 {{ bookings.length }} 筆
+                顯示第 {{ startIndex + 1 }} 到 {{ Math.min(endIndex, filteredBookings.length) }} 筆，共 {{ filteredBookings.length }} 筆
             </span>
             
             <nav aria-label="Page navigation">
@@ -120,13 +120,19 @@ const { data: bookings, pending, error, refresh } = await useFetch(
     immediate: !!authToken.value
   }
 );
-
+const filteredBookings = computed(() => {
+    if (!bookings.value) return [];
+    // 只回傳狀態為 PAID 的訂單
+    // ⚠️ 注意：請確認後端回傳的狀態是大寫 'PAID' 還是小寫 'paid'
+    // 這裡使用 toUpperCase() 來防呆
+    return bookings.value.filter(item => item.status && item.status.toUpperCase() === 'PAID');
+});
 // --- 分頁邏輯 (Computed) ---
 
-// 1. 計算總頁數
+// 1. 計算總頁數 (基於過濾後的長度)
 const totalPages = computed(() => {
-    if (!bookings.value) return 1;
-    return Math.ceil(bookings.value.length / itemsPerPage);
+    if (filteredBookings.value.length === 0) return 1;
+    return Math.ceil(filteredBookings.value.length / itemsPerPage);
 });
 
 // 2. 計算目前頁面的起始索引
@@ -139,11 +145,10 @@ const endIndex = computed(() => {
     return startIndex.value + itemsPerPage;
 });
 
-// 4. 切割出「當前頁面」要顯示的資料
+// 4. 切割出「當前頁面」要顯示的資料 (基於過濾後的資料)
 const paginatedBookings = computed(() => {
-    if (!bookings.value) return [];
     // 陣列切割：slice(開始, 結束)
-    return bookings.value.slice(startIndex.value, endIndex.value);
+    return filteredBookings.value.slice(startIndex.value, endIndex.value);
 });
 
 
