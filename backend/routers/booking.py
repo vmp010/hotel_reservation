@@ -186,7 +186,8 @@ async def get_owner_bookings(db: db_dependency,
             guest_email=guest.email,
             check_in=booking.checkin_date,
             check_out=booking.checkout_date,
-            is_active=booking.is_active
+            is_active=booking.is_active,
+            status=booking.status
         ))
 
     return response_list
