@@ -77,7 +77,8 @@ class OwnerBookingResponse(BaseModel):
     guest_email: str   # 訂房人 Email (方便聯絡)
     check_in: str      # 入住日
     check_out: str     # 退房日
-    is_active: bool    # 訂單狀態
+    is_active: bool   # 訂單狀態
+    status: str       # 訂單狀態
 
     class Config:
         from_attributes = True
