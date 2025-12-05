@@ -7,16 +7,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.sql import func
 import auth
 from auth import get_current_user,get_current_owner
-from routers import carts, hotels, booking,reviews
+from routers import carts, hotels, booking,reviews,user
 
 app = FastAPI()
 app.include_router(auth.router)
+app.include_router(user.router)
+
 app.include_router(carts.router)
 
 app.include_router(hotels.router)
 app.include_router(booking.router)
 
 app.include_router(reviews.router)
+
 
 origins = [
     "http://localhost:3000",

@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from database import db_dependency
 from models import Review, Booking, User, Hotel
-from schemas import ReviewCreate, ReviewResponse
+from schemas import ReviewCreate, ReviewResponse,ReviewUpdate
 from auth import get_current_user
-from datetime import date
+from datetime import datetime
 
 router = APIRouter(
     prefix="/reviews", 
@@ -101,3 +101,42 @@ def delete_review(
     db.commit()
     
     return {"message": "Review deleted successfully"}
+
+@router.put("/{review_id}", response_model=ReviewResponse,status_code=status.HTTP_200_OK)
+def update_review(review_id:int,
+                        review_request:ReviewUpdate,
+                        db:db_dependency,
+                        current_user:User=Depends(get_current_user)
+):
+    review_model = db.query(Review).filter(Review.id == review_id).first()
+
+    # 2. 檢查評論是否存在
+    if not review_model:
+        raise HTTPException(status_code=404, detail="找不到此評論")
+
+    # 3. 🔥 安全檢查：確認這則評論是「目前登入的使用者」寫的
+    if review_model.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="你沒有權限修改這則評論"
+        )
+
+    # 4. 更新資料 (只更新有值的欄位)
+    has_changed = False # 用來標記是否有變動
+
+    if review_request.rating is not None:
+        review_model.rating = review_request.rating
+        has_changed = True
+        
+    if review_request.comment is not None:
+        review_model.comment = review_request.comment
+        has_changed = True
+
+    # 5. 如果有修改，更新 updated_at 時間
+    if has_changed:
+        review_model.updated_at = datetime.now()
+        db.add(review_model)
+        db.commit()
+        db.refresh(review_model)
+
+    return review_model

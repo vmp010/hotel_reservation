@@ -50,6 +50,9 @@ def register_user(user: CreateUserRequest, db: db_dependency):
     if db.query(User).filter((User.username == user.username) | (User.email == user.email)).first():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username or email already exists")
     
+    if db.query(Owner).filter(Owner.email == user.email).first():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered as owner")
+    
     create_user_model = User(username=user.username, email=user.email, password=hashed_password)
 
     db.add(create_user_model)
@@ -92,6 +95,12 @@ async def get_current_user(token: Annotated[str, Depends(OAuth2_bearer)], db: db
 ##店家
 @router.post("/register/owner",status_code=status.HTTP_201_CREATED)
 def register_owner(owner: CreateOwnerRequest, db: db_dependency):
+    if db.query(Owner).filter((Owner.owner_name == owner.owner_name) | (Owner.email == owner.email)).first():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Owner name or email already exists")
+    
+    if db.query(User).filter(User.email == owner.email).first():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered as user")
+    
     hashed_password = bcrypt_context.hash(owner.password)
     create_owner_model = Owner(owner_name=owner.owner_name, email=owner.email, password=hashed_password)
 

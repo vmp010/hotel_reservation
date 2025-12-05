@@ -114,7 +114,25 @@ class ReviewResponse(BaseModel):
     comment: str
     reply: Optional[str] = None
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+class ReviewUpdate(BaseModel):
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    comment: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class UpdateUserEmailRequest(BaseModel):
+    new_email: str
+
+class UpdateUserPasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+
+
 
 
