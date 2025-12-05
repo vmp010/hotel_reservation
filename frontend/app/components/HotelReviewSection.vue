@@ -69,7 +69,8 @@ const checkEligibility = async () => {
   try {
     // 這裡記得加上 server: false，避免 Docker SSR 抓不到
     const historyList = await $fetch(`${config.public.apiBase}/bookings/UserHistory`, {
-        server: false 
+        server: false ,
+        credentials :'include'
     });
     
     const matched = historyList.find(b => b.hotel_name === props.hotelName);

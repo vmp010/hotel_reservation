@@ -64,7 +64,7 @@ const isOwner = computed(() => user.value && room.value && user.value.role === '
 
 // --- 訂房邏輯 ---
 const isBooking = ref(false);
-const { data: unavailableData } = await useFetch(() => `${config.public.apiBase}/bookings/unavailable_dates/${route.params.id}`, { lazy: true, server: false, default: () => [] });
+const { data: unavailableData } = await useFetch(() => `${config.public.apiBase}/bookings/unavailable_dates/${route.params.id}`, { lazy: true, server: false, default: () => [] ,credentials:'include'});
 
 const disabledDates = computed(() => {
     return (unavailableData.value || []).map(b => ({ 
