@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Annotated
-from fastapi import Depends, HTTPException, APIRouter, status
+from fastapi import Depends, HTTPException, APIRouter, status,Response,Request
 from pydantic import BaseModel, EmailStr
 from database import SessionLocal
 from sqlalchemy.orm import Session
@@ -16,9 +16,12 @@ router=APIRouter(
 
 SECRET_KEY ="b8a54b0685e4d1f044931b6c6eb34e58"
 ALGORITHM ="HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES =30
+REFRESH_TOKEN_EXPIRE_DAYS =7
 
 bcrypt_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
-OAuth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
+
+OAuth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token",auto_error=False)
 
 class CreateUserRequest(BaseModel):
     username: str
@@ -44,6 +47,25 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
+def create_token(data: dict, expires_delta: timedelta ):
+    to_encode = data.copy()
+    expire=datetime.utcnow()+expires_delta
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def create_access_token(username: str, user_id: int, role: str, email: str, expires_delta: timedelta):
+    return create_token(
+        data={"sub": username, "id": user_id, "role": role, "email": email},
+        expires_delta=expires_delta
+    )
+
+def create_refresh_token(username: str, user_id: int, role: str, email: str):
+    return create_token(
+        data={"sub": username, "id": user_id, "role": role, "email": email},
+        expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    )
+
 @router.post("/register/user", status_code=201)
 def register_user(user: CreateUserRequest, db: db_dependency):
     hashed_password = bcrypt_context.hash(user.password)
@@ -68,29 +90,6 @@ def authenticate_user(db, username: str, password: str):
         return False
     return user
 
-async def get_current_user(token: Annotated[str, Depends(OAuth2_bearer)], db: db_dependency):
-    try:
-        payload=jwt.decode(token,SECRET_KEY,algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        user_id: int = payload.get("id")
-        role: str = payload.get("role")
-        if username is None or user_id is None or role != "user":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="權限不足",
-            )
-        user=db.query(User).filter(User.id == user_id).first()
-        if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="使用者不存在",
-            )
-        return user
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-        )
 
 ##店家
 @router.post("/register/owner",status_code=status.HTTP_201_CREATED)
@@ -131,40 +130,183 @@ def authenticate_owner(db, username: str, password: str):
     return owner
 
 #統一登入
-@router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency ):
-  input_email=form_data.username
-  input_password=form_data.password
-
-  owner=db.query(Owner).filter(Owner.email == input_email).first()
-  if owner and bcrypt_context.verify(input_password, owner.password):
-      token=create_access_token(owner.owner_name,owner.id,"owner",email=owner.email,expires_delta=timedelta(minutes=30))
-      return {"access_token":token,"token_type":"bearer","role":"owner"}
-  
-  user=db.query(User).filter(User.email == input_email).first()
-  if user and bcrypt_context.verify(input_password, user.password):
-      token=create_access_token(user.username,user.id,"user",email=user.email,expires_delta=timedelta(minutes=30))
-      return {"access_token":token,"token_type":"bearer","role":"user"}
-  raise HTTPException(
-      status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Incorrect username or password",
-  )
-
-def create_access_token(username: str, user_id: int,role:str, email:str, expires_delta: timedelta):
-    encode={"sub":username,"id":user_id,"role":role,"email":email}
-    expires=datetime.utcnow()+expires_delta
-    encode.update({"exp":expires})
-    return jwt.encode(encode,SECRET_KEY,algorithm=ALGORITHM)
-
-
+@router.post("/token")
+async def login_for_access_token(
+    response: Response, 
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], 
+    db: db_dependency 
+):
+    input_email = form_data.username
+    input_password = form_data.password
     
-async def get_current_owner(token: Annotated[str, Depends(OAuth2_bearer)], db: db_dependency):
+    user_obj = None
+    role = None
+
+    # A. 檢查 Owner
+    owner = db.query(Owner).filter(Owner.email == input_email).first()
+    if owner and bcrypt_context.verify(input_password, owner.password):
+        user_obj = owner
+        role = "owner"
+        username = owner.owner_name
+    
+    # B. 檢查 User
+    if not user_obj:
+        user = db.query(User).filter(User.email == input_email).first()
+        if user and bcrypt_context.verify(input_password, user.password):
+            user_obj = user
+            role = "user"
+            username = user.username
+
+    # C. 驗證失敗
+    if not user_obj:
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
+
+    # D. 產生 Tokens
+    access_token = create_access_token(username, user_obj.id, role, user_obj.email)
+    refresh_token = create_refresh_token(username, user_obj.id, role)
+
+    # E. 設定 Cookies
+    # 1. Access Token (短效)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        samesite="lax",
+        secure=False  # 上線改 True
+    )
+
+    # 2. Refresh Token (長效，限制路徑)
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        samesite="lax",
+        secure=False, # 上線改 True
+        path="/auth/refresh" # 🔥 安全關鍵：只有換票 API 能讀到這個 Cookie
+    )
+
+    return {"message": "Login successful", "role": role}
+# def create_access_token(username: str, user_id: int,role:str, email:str, expires_delta: timedelta):
+#     encode={"sub":username,"id":user_id,"role":role,"email":email}
+#     expires=datetime.utcnow()+expires_delta
+#     encode.update({"exp":expires})
+#     return jwt.encode(encode,SECRET_KEY,algorithm=ALGORITHM)
+
+@router.post("/refresh")
+async def refresh_access_token(request:Request, response: Response, db: db_dependency):
+    refresh_token=request.cookies.get("refresh_token")
+
+    if not refresh_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token missing")
     try:
-        payload=jwt.decode(token,SECRET_KEY,algorithms=[ALGORITHM])
-        owner_name: str = payload.get("sub")
+        payload=jwt.decode(refresh_token,SECRET_KEY,algorithms=[ALGORITHM])
+
+        if payload.get("type")!="refresh":
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+        username: str = payload.get("sub")
+        user_id: int = payload.get("id")
+        role: str = payload.get("role")
+
+        if role=="user":
+            user=db.query(User).filter(User.id == user_id).first()
+            email=user.email if user else ""
+        elif role=="owner":
+            owner=db.query(Owner).filter(Owner.id == user_id).first()
+            user=owner
+            email=owner.email if owner else ""
+        
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+        
+        new_access_token=create_access_token(username,user_id,role,email)
+
+        response.set_cookie(
+            key="access_token",
+            value=new_access_token,
+            httponly=True,
+            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            samesite="lax",
+            secure=False  # 上線改 True
+        )
+        return {"message":"Access token refreshed"}
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+    
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(key="access_token")
+    response.delete_cookie(key="refresh_token", path="/auth/refresh")
+    return {"message":"Logged out successfully"}
+
+async def get_current_user(
+        request: Request,
+         db: db_dependency,
+        token: str=Annotated[str, Depends(OAuth2_bearer)],
+):
+    cookie_token=request.cookies.get("access_token")
+    final_token=cookie_token if cookie_token else token
+
+    if not final_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
+    try:
+        payload=jwt.decode(final_token,SECRET_KEY,algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        user_id: int = payload.get("id")
+        role: str = payload.get("role")
+
+        if role != "user":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="權限不足",
+            )
+        user=db.query(User).filter(User.id == user_id).first()
+        if username is None :
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="使用者不存在"
+            )
+        return user
+    
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token無效",
+        )
+@router.get("/user/me",status_code=status.HTTP_200_OK)
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    return {
+        "id": current_user.id,
+        "username": current_user.username,
+        "email": current_user.email,
+        "role": "user"
+    }
+
+async def get_current_owner(
+    request: Request, 
+    db: db_dependency,
+    token:str = Depends(OAuth2_bearer) 
+):
+    cookie_token=request.cookies.get("access_token")
+    final_token=cookie_token if cookie_token else token
+
+    if not final_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
+    
+    try:
+        payload=jwt.decode(final_token,SECRET_KEY,algorithms=[ALGORITHM])
+        
         owner_id: int = payload.get("id")
         role: str = payload.get("role")
-        if owner_name is None or owner_id is None or role != "owner":
+        if role != "owner":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
@@ -179,5 +321,14 @@ async def get_current_owner(token: Annotated[str, Depends(OAuth2_bearer)], db: d
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail="token無效"
         )
+    
+@router.get("/owner/me",status_code=status.HTTP_200_OK)
+async def read_owners_me(current_owner: Owner = Depends(get_current_owner)):
+    return {
+        "id": current_owner.id,
+        "owner_name": current_owner.owner_name,
+        "email": current_owner.email,
+        "role": "owner"
+    }
