@@ -32,9 +32,10 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthToken, useUser } from '~/composables/useAuth';
+// 1. 引入 initializeUserSession (這是關鍵，用來打 /auth/me)
+import { useUser, initializeUserSession } from '~/composables/useAuth';
 
 const router = useRouter()
 const config = useRuntimeConfig()
@@ -45,7 +46,6 @@ const loading = ref(false)
 const error = ref('')
 const success = ref('')
 
-const authToken = useAuthToken();
 const user = useUser();
 
 const handleLogin = async () => {
@@ -58,39 +58,30 @@ const handleLogin = async () => {
     formData.append('password', password.value);
 
     try {
-        // 1. 發送請求
-        const res = await $fetch(`${config.public.apiBase}/auth/token`, {
+        // 2. 發送登入請求
+        // 這裡不需要接回傳值 (Token)，因為後端會自動 Set-Cookie
+        // 只要沒有報錯，就代表登入成功了
+        await $fetch(`${config.public.apiBase}/auth/token`, {
             method: 'POST',
             body: formData,
         })
         
-        const token = res.access_token || res.token; 
-        if (!token) throw new Error('登入失敗，未取得 Token');
+        // 3. 登入成功後，立刻呼叫後端查詢使用者資料
+        // 這會打 /auth/me 並更新 user.value
+        await initializeUserSession();
 
-        // 2. 寫入 Cookie 並等待 Vue 反應
-        authToken.value = token; 
-        await nextTick(); 
-
-        // 3. 設定使用者狀態 (包含 role)
-        // 這裡很重要：res.role 是後端判斷出來的身分
-        user.value = {
-            id: res.id, 
-            username: res.username || email.value.split('@')[0], 
-            email: email.value,
-            role: res.role // 這是關鍵！可能是 'user' 或 'owner'
-        };
-        
-        if (process.client) {
-             localStorage.setItem('user', JSON.stringify(user.value))
+        // 檢查是否成功取得使用者資料
+        if (!user.value) {
+            throw new Error('登入成功，但無法獲取使用者資訊');
         }
 
         success.value = '登入成功！正在跳轉...';
         
-        // 4. 🚀 核心修改：依據身分分流
+        // 4. 根據角色跳轉
         setTimeout(() => {
             if (user.value.role === 'owner') {
                 // 如果是業者，跳轉到管理頁面
-                // 這裡使用 window.location.href 確保狀態最乾淨 (如同我們之前的修復)
+                // 使用 window.location.href 強制刷新，確保 Cookie 狀態最乾淨
                 window.location.href = '/settingHotel'; 
             } else {
                 // 如果是一般人，跳回首頁
@@ -100,10 +91,11 @@ const handleLogin = async () => {
         
     } catch (e) {
         console.error(e)
+        // 錯誤處理
         const message = e?.data?.detail || '帳號或密碼錯誤'
         error.value = Array.isArray(message) ? message.join(', ') : message
         
-        authToken.value = null;
+        // 清空狀態
         user.value = null;
     } finally {
         loading.value = false
