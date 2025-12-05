@@ -47,23 +47,31 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
-def create_token(data: dict, expires_delta: timedelta ):
+def create_token(data: dict, expires_delta: timedelta=None ):
     to_encode = data.copy()
-    expire=datetime.utcnow()+expires_delta
+    if expires_delta:
+        expire=datetime.utcnow()+expires_delta
+    else:
+        expire=datetime.utcnow()+timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def create_access_token(username: str, user_id: int, role: str, email: str, expires_delta: timedelta):
+def create_access_token(username: str, user_id: int, role: str, email: str, expires_delta: timedelta=None):
+    if expires_delta is None:
+        expires_delta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
     return create_token(
         data={"sub": username, "id": user_id, "role": role, "email": email},
         expires_delta=expires_delta
     )
 
-def create_refresh_token(username: str, user_id: int, role: str, email: str):
+def create_refresh_token(username: str, user_id: int, role: str, email: str, expires_delta: timedelta=None):
+    if expires_delta is None:
+        expires_delta = timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     return create_token(
         data={"sub": username, "id": user_id, "role": role, "email": email},
-        expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        expires_delta=expires_delta
     )
 
 @router.post("/register/user", status_code=201)
@@ -162,7 +170,7 @@ async def login_for_access_token(
         raise HTTPException(status_code=401, detail="Incorrect email or password")
 
     # D. 產生 Tokens
-    access_token = create_access_token(username, user_obj.id, role, user_obj.email)
+    access_token = create_access_token(username, user_obj.id, role, user_obj.email,timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     refresh_token = create_refresh_token(username, user_obj.id, role)
 
     # E. 設定 Cookies
