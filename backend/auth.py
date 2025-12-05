@@ -10,6 +10,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.hash import bcrypt
 
+#彥光很戳
+
 router=APIRouter(
     prefix="/auth",
       tags=["auth"])
@@ -171,7 +173,7 @@ async def login_for_access_token(
 
     # D. 產生 Tokens
     access_token = create_access_token(username, user_obj.id, role, user_obj.email,timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    refresh_token = create_refresh_token(username, user_obj.id, role)
+    refresh_token = create_refresh_token(username, user_obj.id, role,user_obj.email, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
 
     # E. 設定 Cookies
     # 1. Access Token (短效)
