@@ -88,13 +88,15 @@ const submitBooking = async ({ start, end }) => {
         // 🚀 修正：移除 headers，瀏覽器自動帶 Cookie
         await $fetch(`${config.public.apiBase}/bookings/create`, { 
             method: 'POST', 
-            body: payload 
+            body: payload ,
+            credentials: 'include' // 試試看加上這行
         });
         
         try {
             // 🚀 修正：移除 headers
             await $fetch(`${config.public.apiBase}/carts/add/${route.params.id}`, { 
-                method: 'POST' 
+                method: 'POST' ,
+                credentials: 'include' // 試試看加上這行
             });
         } catch(e) {}
 

@@ -240,8 +240,8 @@ const refreshDashboard = async () => {
     try {
         // 3. 移除 headers，並加上 server: false 確保在瀏覽器端執行
         const [hotelsRes, bookingsRes] = await Promise.all([
-            $fetch(`${config.public.apiBase}/hotels/my_hotels`, { server: false }),
-            $fetch(`${config.public.apiBase}/bookings/owner/all`, { server: false })
+            $fetch(`${config.public.apiBase}/hotels/my_hotels`, { server: false ,credentials:'include'}),
+            $fetch(`${config.public.apiBase}/bookings/owner/all`, { server: false ,credentials:'include' })
         ]);
         
         myHotels.value = hotelsRes.hotels || [];
@@ -262,7 +262,7 @@ const { data: cartItems, pending: cartPending, error: cartError, refresh: refres
     if (!userState.value || userState.value.role !== 'user') return [];
     
     // 5. 移除 headers
-    return await $fetch(`${config.public.apiBase}/carts/`, { server: false });
+    return await $fetch(`${config.public.apiBase}/carts/`, { server: false ,credentials:'include' });
   },
   { lazy: true, server: false, default: () => [] }
 );
@@ -289,7 +289,8 @@ const cancelHotel = async (bookingId, hotelName) => {
   try {
     // 6. 移除 headers
     await $fetch(`${config.public.apiBase}/carts/delete/${bookingId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      credentials: 'include'
     });
     await refreshCart();
     Swal.fire({ icon: 'success', title: '已取消', timer: 1500, showConfirmButton: false });
@@ -319,7 +320,8 @@ const handleCheckout = async () => {
     try {
         // 7. 移除 headers
         const res = await $fetch(`${config.public.apiBase}/carts/checkout`, {
-            method: 'POST'
+            method: 'POST',
+            credentials: 'include'
         });
 
         await Swal.fire({

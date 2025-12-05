@@ -40,9 +40,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-// import { useAuthToken } from '~/composables/useAuth';
 import Swal from 'sweetalert2';
-import ReviewList from '~/components/ReviewList.vue'; // 確保有引入
+import ReviewList from '~/components/ReviewList.vue'; 
+import { useUser } from '~/composables/useAuth'; // 🚨 修正：引入 useUser
 
 const props = defineProps({
   hotelId: [Number, String],
@@ -51,7 +51,7 @@ const props = defineProps({
 });
 
 const config = useRuntimeConfig();
-// const authToken = useAuthToken();
+const userState = useUser(); // 🚨 修正：定義 userState 變數
 
 const canReview = ref(false);
 const hasReviewed = ref(false);
@@ -63,17 +63,21 @@ const reviewListRef = ref(null);
 
 // 檢查資格
 const checkEligibility = async () => {
+  // 現在 userState 有定義了，這裡就不會報錯了
   if (!userState.value || props.isOwner) return;
+  
   try {
+    // 這裡記得加上 server: false，避免 Docker SSR 抓不到
     const historyList = await $fetch(`${config.public.apiBase}/bookings/UserHistory`, {
+        server: false 
     });
-    // 注意：這裡假設 UserHistory 回傳的資料有 hotel_name
+    
     const matched = historyList.find(b => b.hotel_name === props.hotelName);
     if (matched) {
       canReview.value = true;
       bookingId.value = matched.booking_id;
     }
-  } catch (e) { console.error(e); }
+  } catch (e) {  }
 };
 
 onMounted(() => checkEligibility());

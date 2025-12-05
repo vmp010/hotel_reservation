@@ -56,7 +56,7 @@
 import { defineProps, defineExpose ,defineEmits } from 'vue';
 import { format } from 'date-fns'; 
 import Swal from 'sweetalert2';
-import { useAuthToken, useUser } from '~/composables/useAuth'; // 引入 Auth
+import { useUser } from '~/composables/useAuth'; // 引入 Auth
 // 2. 定義可以發送的事件
 const emit = defineEmits(['review-deleted']);
 // 定義一個動態的 Base URL
@@ -72,7 +72,6 @@ const props = defineProps({
 });
 
 const config = useRuntimeConfig();
-const authToken = useAuthToken();
 const user = useUser(); // 取得目前登入者
 
 // 呼叫 API: GET /reviews/{hotel_id}
@@ -110,9 +109,6 @@ const deleteReview = async (reviewId) => {
     try {
         await $fetch(`${config.public.apiBase}/reviews/delete/${reviewId}`, {
             method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${authToken.value}`
-            }
         });
 
         Swal.fire('已刪除', '您的評論已移除', 'success');
