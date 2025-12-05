@@ -1,20 +1,44 @@
-import { useAuthToken } from '~/composables/useAuth'; // 確保路徑正確
+import { useUser } from '~/composables/useAuth';
 
-export default defineNuxtRouteMiddleware((to, from) => {
-    // 取得儲存在 Cookie 裡的 JWT Token
-    const authToken = useAuthToken();
+export default defineNuxtRouteMiddleware(async (to, from) => {
+    // 解決錯誤 1：告訴 TS 這個 user 可以是任何型別
+    const user = useUser() as any; 
 
-    // 🚩 判斷邏輯：只要 authToken.value 存在且非空，就視為已登入
-    if (!authToken.value) {
-        // 如果沒有 Token (未登入)
-        if (to.path !== '/login' && to.path !== '/register') {
-            // 避免無限重定向
-            return navigateTo('/login');
+    // 1. 如果 user 狀態是空的，嘗試呼叫一次 /auth/me 確認身分
+    if (!user.value) {
+        try {
+            const config = useRuntimeConfig();
+            const headers = useRequestHeaders(['cookie']);
+            
+            // 這裡使用 $fetch 取得資料
+            const data = await $fetch(`${config.public.apiBase}/auth/me`, {
+                headers: headers
+            });
+            
+            if (data) {
+                user.value = data;
+            }
+        } catch (e) {
+            user.value = null;
         }
     }
-    
-    // 如果已登入，且試圖訪問 /login 頁面，則導航到首頁
-    if (authToken.value && (to.path === '/login' || to.path === '/register')) {
+
+    const isLoggedIn = !!user.value;
+
+    // A. 未登入邏輯
+    const publicPages = ['/login', '/register', '/registerOwner'];
+    const isPublicPage = publicPages.includes(to.path);
+
+    if (!isLoggedIn && !isPublicPage) {
+        return navigateTo('/login');
+    }
+
+    // B. 已登入邏輯
+    if (isLoggedIn && isPublicPage) {
+        // 解決錯誤 2：加上 ?. 防止 user.value 為 null 時報錯
+        if (user.value?.role === 'owner') {
+            return navigateTo('/settingHotel');
+        }
         return navigateTo('/');
     }
 });

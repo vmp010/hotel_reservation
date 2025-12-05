@@ -101,62 +101,65 @@
 </template>
 
 <script setup>
-import { useAuthToken } from '~/composables/useAuth';
+// ❌ 移除 useAuthToken (因為 HttpOnly Cookie 前端讀不到)
+// import { useAuthToken } from '~/composables/useAuth'; 
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 const config = useRuntimeConfig();
-const authToken = useAuthToken();
+// ❌ 移除這行
+// const authToken = useAuthToken(); 
+
 let timer = null;
 
 // --- 分頁設定 ---
-const currentPage = ref(1); // 目前在第幾頁
-const itemsPerPage = 4;     // 一頁顯示幾筆
+const currentPage = ref(1); 
+const itemsPerPage = 4;    
 
 // API 請求
 const { data: bookings, pending, error, refresh } = await useFetch(
   `${config.public.apiBase}/bookings/owner/all`,
   {
-    headers: { 'Authorization': `Bearer ${authToken.value}` },
-    immediate: !!authToken.value
+    // 🚀 關鍵修改 1: 移除 headers
+    // headers: { 'Authorization': `Bearer ${authToken.value}` }, <--- 刪除這行
+
+    // 🚀 關鍵修改 2: 加上 server: false
+    // 因為在 Docker 內 Server 端抓不到 localhost，且 Cookie 在 SSR 傳遞較麻煩
+    // 直接讓瀏覽器端 (Client) 去抓，瀏覽器會自動把 HttpOnly Cookie 帶給後端
+    server: false
+    
+    // immediate: !!authToken.value <--- 刪除這行，預設就是 true
   }
 );
+
+// --- 前端過濾邏輯 (只顯示 PAID) ---
 const filteredBookings = computed(() => {
     if (!bookings.value) return [];
-    // 只回傳狀態為 PAID 的訂單
-    // ⚠️ 注意：請確認後端回傳的狀態是大寫 'PAID' 還是小寫 'paid'
-    // 這裡使用 toUpperCase() 來防呆
+    // 這裡維持您原本的邏輯
     return bookings.value.filter(item => item.status && item.status.toUpperCase() === 'PAID');
 });
-// --- 分頁邏輯 (Computed) ---
 
-// 1. 計算總頁數 (基於過濾後的長度)
+// --- 分頁邏輯 (維持不變) ---
 const totalPages = computed(() => {
     if (filteredBookings.value.length === 0) return 1;
     return Math.ceil(filteredBookings.value.length / itemsPerPage);
 });
 
-// 2. 計算目前頁面的起始索引
 const startIndex = computed(() => {
     return (currentPage.value - 1) * itemsPerPage;
 });
 
-// 3. 計算目前頁面的結束索引
 const endIndex = computed(() => {
     return startIndex.value + itemsPerPage;
 });
 
-// 4. 切割出「當前頁面」要顯示的資料 (基於過濾後的資料)
 const paginatedBookings = computed(() => {
-    // 陣列切割：slice(開始, 結束)
     return filteredBookings.value.slice(startIndex.value, endIndex.value);
 });
-
 
 // --- 自動刷新 ---
 onMounted(() => {
     timer = setInterval(() => {
         refresh(); 
-        // 注意：這裡不需要重置 currentPage，這樣刷新時使用者會停留在原本的頁數，體驗更好
     }, 5000);
 });
 

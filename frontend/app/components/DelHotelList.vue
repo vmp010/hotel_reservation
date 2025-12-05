@@ -100,7 +100,7 @@ const deleteHotel = async (id, name) => {
   isDeleting.value = true;
   try {
     // 🚀 關鍵修正：移除了 headers
-    await $fetch(`${config.public.apiBase}/hotels/${id}`, {
+    await $fetch(`${config.public.apiBase}/hotels/delete/${id}`, {
       method: 'DELETE'
     });
 

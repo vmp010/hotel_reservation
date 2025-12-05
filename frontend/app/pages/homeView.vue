@@ -77,7 +77,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useUser, initializeUserSession, useAuthToken } from '~/composables/useAuth';
+import { useUser, initializeUserSession } from '~/composables/useAuth';
 import { jwtDecode } from 'jwt-decode'; // 1. 確保引入這個
 
 definePageMeta({ middleware: 'auth' })

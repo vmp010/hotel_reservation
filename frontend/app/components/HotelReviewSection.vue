@@ -40,7 +40,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useAuthToken } from '~/composables/useAuth';
+// import { useAuthToken } from '~/composables/useAuth';
 import Swal from 'sweetalert2';
 import ReviewList from '~/components/ReviewList.vue'; // 確保有引入
 
@@ -51,7 +51,7 @@ const props = defineProps({
 });
 
 const config = useRuntimeConfig();
-const authToken = useAuthToken();
+// const authToken = useAuthToken();
 
 const canReview = ref(false);
 const hasReviewed = ref(false);
@@ -63,10 +63,9 @@ const reviewListRef = ref(null);
 
 // 檢查資格
 const checkEligibility = async () => {
-  if (!authToken.value || props.isOwner) return;
+  if (!userState.value || props.isOwner) return;
   try {
     const historyList = await $fetch(`${config.public.apiBase}/bookings/UserHistory`, {
-      headers: { 'Authorization': `Bearer ${authToken.value}` }
     });
     // 注意：這裡假設 UserHistory 回傳的資料有 hotel_name
     const matched = historyList.find(b => b.hotel_name === props.hotelName);
@@ -84,7 +83,6 @@ const submitReview = async () => {
   try {
     await $fetch(`${config.public.apiBase}/reviews/create`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${authToken.value}` },
       body: {
         hotel_id: parseInt(props.hotelId),
         booking_id: bookingId.value,
