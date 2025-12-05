@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi import Depends, HTTPException, APIRouter, status,Response,Request
 from pydantic import BaseModel, EmailStr
 from database import SessionLocal
@@ -21,7 +21,7 @@ REFRESH_TOKEN_EXPIRE_DAYS =7
 
 bcrypt_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
 
-OAuth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token",auto_error=False)
+OAuth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token",auto_error=False)
 
 class CreateUserRequest(BaseModel):
     username: str
@@ -244,7 +244,7 @@ async def logout(response: Response):
 async def get_current_user(
         request: Request,
          db: db_dependency,
-        token: str=Annotated[str, Depends(OAuth2_bearer)],
+        token: Optional[str] = Depends(OAuth2_scheme),
 ):
     cookie_token=request.cookies.get("access_token")
     final_token=cookie_token if cookie_token else token
@@ -278,19 +278,11 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token無效",
         )
-@router.get("/user/me",status_code=status.HTTP_200_OK)
-async def read_users_me(current_user: User = Depends(get_current_user)):
-    return {
-        "id": current_user.id,
-        "username": current_user.username,
-        "email": current_user.email,
-        "role": "user"
-    }
 
 async def get_current_owner(
     request: Request, 
     db: db_dependency,
-    token:str = Depends(OAuth2_bearer) 
+    token: Optional[str] = Depends(OAuth2_scheme) 
 ):
     cookie_token=request.cookies.get("access_token")
     final_token=cookie_token if cookie_token else token
@@ -323,12 +315,24 @@ async def get_current_owner(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="token無效"
         )
+@router.get("/me")
+async def read_me(request: Request, db: db_dependency):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401)
     
-@router.get("/owner/me",status_code=status.HTTP_200_OK)
-async def read_owners_me(current_owner: Owner = Depends(get_current_owner)):
-    return {
-        "id": current_owner.id,
-        "owner_name": current_owner.owner_name,
-        "email": current_owner.email,
-        "role": "owner"
-    }
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        role = payload.get("role")
+        user_id = payload.get("id")
+        
+        if role == "user":
+            user = db.query(User).filter(User.id == user_id).first()
+            return {"id": user.id, "username": user.username, "role": "user", "email": user.email}
+            
+        elif role == "owner":
+            owner = db.query(Owner).filter(Owner.id == user_id).first()
+            return {"id": owner.id, "owner_name": owner.owner_name, "role": "owner", "email": owner.email}
+            
+    except JWTError:
+        raise HTTPException(status_code=401)
