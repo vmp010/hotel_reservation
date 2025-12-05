@@ -64,6 +64,8 @@ const handleLogin = async () => {
         await $fetch(`${config.public.apiBase}/auth/token`, {
             method: 'POST',
             body: formData,
+            // 🚨 強制攜帶 (雖然登入是寫入，但加上去保險)
+            credentials: 'include'
         })
         
         // 3. 登入成功後，立刻呼叫後端查詢使用者資料

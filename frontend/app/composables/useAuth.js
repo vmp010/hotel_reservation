@@ -48,7 +48,9 @@ export const initializeUserSession = async () => {
         // 發送請求給後端，瀏覽器會自動帶上 HttpOnly Cookie
         // 這裡需要後端有一支 GET /auth/me 的 API
         const data = await $fetch(`${config.public.apiBase}/auth/me`, {
-            retry: 0 // 不需要重試，失敗就代表沒登入
+            retry: 0, // 不需要重試，失敗就代表沒登入
+            // 🚨 強制瀏覽器攜帶 Cookie (憑證)
+            credentials: 'include'
         });
 
         if (data) {

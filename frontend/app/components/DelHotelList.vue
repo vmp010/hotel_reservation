@@ -1,4 +1,3 @@
-<!-- 荒廢中 -->
 <template>
   <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -59,9 +58,7 @@
       <div v-else class="text-center py-5 bg-light rounded border border-dashed">
         <i class="bi bi-house-slash display-4 text-muted"></i>
         <h4 class="mt-3 text-muted">您還沒有新增任何飯店</h4>
-        <NuxtLink to="/addHotel" class="btn btn-primary mt-3">
-          <i class="bi bi-plus-lg me-1"></i> 立即新增第一間飯店
-        </NuxtLink>
+        <p>趕快去「新增飯店」頁籤建立您的第一間飯店吧！</p>
       </div>
     </div>
   </div>
@@ -70,45 +67,29 @@
 <script setup>
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
-import { useAuthToken } from '~/composables/useAuth';
+// 不需要再引入 useAuthToken 了
 
 const config = useRuntimeConfig();
-const authToken = useAuthToken();
 const isDeleting = ref(false);
 
 // 1. 獲取飯店列表 (GET /hotels/my_hotels)
+// 🚀 關鍵修正：移除了 headers
 const { data: responseData, pending, error, refresh: refreshHotels } = await useFetch(
-  `${config.public.apiBase}/hotels/my_hotels`,
-  {
-    headers: {
-      // 必帶 Token
-      Authorization: `Bearer ${authToken.value}`
-    },
-    // 如果 Token 不存在就不發送請求 (防呆)
-    immediate: !!authToken.value,
-    // 當發生 401 錯誤時的處理 (可選)
-    onResponseError({ response }) {
-        if (response.status === 401) {
-            console.error('Token 失效');
-        }
-    }
-  }
+  `${config.public.apiBase}/hotels/my_hotels`
 );
 
-// 2. 整理資料 (因為 API 回傳的是 { "hotels": [...] })
 const hotels = computed(() => {
   return responseData.value?.hotels || [];
 });
 
 // 3. 刪除邏輯
 const deleteHotel = async (id, name) => {
-  // (A) 確認視窗
   const result = await Swal.fire({
     title: '確定要刪除嗎？',
     html: `您即將刪除飯店：<b class="text-danger">${name}</b><br>此操作無法復原！`,
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonColor: '#dc3545', // 紅色
+    confirmButtonColor: '#dc3545',
     cancelButtonColor: '#6c757d',
     confirmButtonText: '是的，狠心刪除',
     cancelButtonText: '取消'
@@ -116,20 +97,13 @@ const deleteHotel = async (id, name) => {
 
   if (!result.isConfirmed) return;
 
-  // (B) 執行刪除 API
   isDeleting.value = true;
   try {
-    // 🚨 重要：請確認後端刪除的 API 路徑
-    // 假設是 DELETE http://localhost:8000/hotels/{id}
-    // 或是 DELETE http://localhost:8000/hotels/delete/{id}
-    await $fetch(`${config.public.apiBase}/hotels/delete/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${authToken.value}`
-      }
+    // 🚀 關鍵修正：移除了 headers
+    await $fetch(`${config.public.apiBase}/hotels/${id}`, {
+      method: 'DELETE'
     });
 
-    // (C) 成功提示並刷新列表
     await Swal.fire({
       icon: 'success',
       title: '刪除成功',
@@ -138,7 +112,6 @@ const deleteHotel = async (id, name) => {
       showConfirmButton: false
     });
     
-    // 重新抓取列表，更新畫面
     refreshHotels();
 
   } catch (err) {
@@ -155,7 +128,6 @@ const deleteHotel = async (id, name) => {
 </script>
 
 <style scoped>
-/* 讓表格更有質感 */
 .table-hover tbody tr:hover {
   background-color: #f8f9fa;
   transition: background-color 0.2s;

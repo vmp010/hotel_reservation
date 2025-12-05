@@ -30,7 +30,10 @@
                     <input v-model.number="hotelData.price" type="number" class="form-control" placeholder="2000" required />
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100">確認新增</button>
+                <button type="submit" class="btn btn-primary w-100" :disabled="loading">
+                    <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+                    {{ loading ? '新增中...' : '確認新增' }}
+                </button>
                 <p v-if="msg" class="mt-3 text-center" :class="isError ? 'text-danger' : 'text-success'">
                     {{ msg }}
                 </p>
@@ -40,54 +43,39 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { useAuthToken } from '~/composables/useAuth';
+import { ref } from 'vue';
+// 不需要再引入 useAuthToken 了
+import { useRuntimeConfig } from '#app';
 
-// 🚨 統一用 localhost，不要用 127.0.0.1
-const API_URL = 'http://localhost:8000/hotels/create'; 
+const config = useRuntimeConfig();
+// 建議改用 config 設定的 API Base，比較彈性
+const API_URL = `${config.public.apiBase}/hotels/create`;
 
 const hotelData = ref({ hotel_name: '', location: '', room_type: '', price: null });
 const msg = ref('');
 const isError = ref(false);
-
-// 取得 Token
-const authToken = useAuthToken();
-
-// 顯示 Token 長度用來除錯
-const tokenLength = computed(() => authToken.value ? authToken.value.length : '無 Token');
+const loading = ref(false);
 
 const addHotel = async () => {
-    msg.value = '傳送中...';
+    msg.value = '';
     isError.value = false;
-
-    // 1. 優先從 Cookie 拿，如果沒有就從 LocalStorage 拿 (雙重保險)
-    let token = authToken.value;
-    if (!token && process.client) {
-        token = localStorage.getItem('manual_token');
-    }
-
-    if (!token) {
-        msg.value = '❌ 錯誤：找不到 Token，請重新登入';
-        isError.value = true;
-        return;
-    }
+    loading.value = true;
 
     try {
-        console.log('準備發送請求，Token:', token.substring(0, 10) + '...');
-
-        // 2. 🚨 關鍵：手動加入 Header，不依賴攔截器
+        // 🚀 關鍵修改：
+        // 1. 不需要讀取 Token
+        // 2. 不需要手動加 Authorization Header
+        // 3. 瀏覽器會自動把 HttpOnly Cookie 帶過去
         const response = await $fetch(API_URL, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`, // 手動拼接
-                'Content-Type': 'application/json'
-            },
             body: {
                 hotel_name: hotelData.value.hotel_name,
                 location: hotelData.value.location,
                 room_type: hotelData.value.room_type,
                 price: hotelData.value.price
             }
+            // 如果遇到跨域問題 (localhost:3000 -> 127.0.0.1:8000)，可能需要加這行：
+            // credentials: 'include' 
         });
         
         msg.value = `✅ 成功！飯店 ID: ${response.hotel_id || response.id}`;
@@ -98,11 +86,13 @@ const addHotel = async () => {
         console.error('API 錯誤:', error);
         isError.value = true;
         
-        if (error.status === 401) {
-            msg.value = '❌ 401 Unauthorized：後端拒絕了 Token。';
+        if (error.response?.status === 401) {
+            msg.value = '❌ 權限不足：請先登入 (Cookie 失效)';
         } else {
-            msg.value = `❌ 錯誤 (${error.status}): ${error.data?.detail || error.message}`;
+            msg.value = `❌ 錯誤: ${error.data?.detail || error.message}`;
         }
+    } finally {
+        loading.value = false;
     }
 };
 </script>
