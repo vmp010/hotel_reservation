@@ -86,7 +86,6 @@ definePageMeta({ middleware: 'auth' })
 // 🚀 關鍵修正：不要等 onMounted，直接在 setup 階段同步恢復
 // ==========================================
 const user = useUser();
-const authToken = useAuthToken();
 
 // 如果 user 還是空的，但我們手上有 Token，馬上解碼塞進去！
 // 這樣就不用等 initializeUserSession 慢慢跑

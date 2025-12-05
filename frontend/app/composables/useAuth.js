@@ -21,7 +21,8 @@ export const performLogoutCleanup = async () => {
     try {
         // 呼叫後端清除 Cookie
         await $fetch(`${config.public.apiBase}/auth/logout`, {
-            method: 'POST'
+            method: 'POST',
+            credentials: 'include' // 👈 這一行非常重要！沒加的話，瀏覽器可能會忽略刪除指令
         });
     } catch (e) {
         console.error('登出 API 呼叫失敗 (可能 Token 已過期)', e);
