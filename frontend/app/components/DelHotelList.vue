@@ -36,7 +36,16 @@
             <tbody>
               <tr v-for="hotel in hotels" :key="hotel.id">
                 <td class="ps-4 fw-bold text-secondary">#{{ hotel.id }}</td>
-                <td class="fw-bold text-primary">{{ hotel.hotel_name }}</td>
+                <td>
+                  <NuxtLink 
+                    :to="`/rooms/${hotel.id}`" 
+                    class="fw-bold text-primary text-decoration-none hover-underline d-inline-flex align-items-center"
+                    target="_blank" 
+                  >
+                    <span>{{ hotel.hotel_name }}</span>
+                    <i class="bi bi-box-arrow-up-right small ms-2" style="font-size: 0.8em; transform: translateY(-1px);"></i>
+                    </NuxtLink>
+                </td>
                 <td><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ hotel.location }}</td>
                 <td><span class="badge bg-info text-dark">{{ hotel.room_type }}</span></td>
                 <td class="fw-bold text-success">${{ hotel.price.toLocaleString() }}</td>
@@ -134,11 +143,17 @@ const deleteHotel = async (id, name) => {
 </script>
 
 <style scoped>
+/* 原有的樣式保留 */
 .table-hover tbody tr:hover {
   background-color: #f8f9fa;
   transition: background-color 0.2s;
 }
 .border-dashed {
     border-style: dashed !important;
+}
+
+/* 新增：滑鼠移過連結時顯示底線 */
+.hover-underline:hover {
+    text-decoration: underline !important;
 }
 </style>
