@@ -109,6 +109,7 @@ const deleteReview = async (reviewId) => {
     try {
         await $fetch(`${config.public.apiBase}/reviews/delete/${reviewId}`, {
             method: 'DELETE',
+            credentials: 'include'
         });
 
         Swal.fire('已刪除', '您的評論已移除', 'success');

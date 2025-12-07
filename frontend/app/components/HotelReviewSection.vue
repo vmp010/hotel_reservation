@@ -32,7 +32,11 @@
         </div>
 
         <hr class="my-5">
-        <ReviewList :hotel-id="hotelId" ref="reviewListRef" @review-deleted="hasReviewed = false" />
+        <ReviewList 
+          :hotel-id="hotelId" 
+          ref="reviewListRef" 
+          @review-deleted="handleReviewDeleted" 
+        />
       </div>
     </div>
   </div>
@@ -63,24 +67,57 @@ const reviewListRef = ref(null);
 
 // 檢查資格
 const checkEligibility = async () => {
-  // 現在 userState 有定義了，這裡就不會報錯了
+  // 1. 基本檢查
   if (!userState.value || props.isOwner) return;
   
   try {
-    // 這裡記得加上 server: false，避免 Docker SSR 抓不到
-    const historyList = await $fetch(`${config.public.apiBase}/bookings/UserHistory`, {
-        server: false ,
-        credentials :'include'
-    });
-    
-    const matched = historyList.find(b => b.hotel_name === props.hotelName);
-    if (matched) {
-      canReview.value = true;
-      bookingId.value = matched.booking_id;
-    }
-  } catch (e) {  }
-};
+    // 2. 平行發送請求：抓「歷史訂單」跟「該飯店所有評論」
+    const [historyList, reviewsRes] = await Promise.all([
+        $fetch(`${config.public.apiBase}/bookings/UserHistory`, {
+            server: false, credentials: 'include'
+        }),
+        $fetch(`${config.public.apiBase}/reviews/${props.hotelId}`, { // 假設有這支 API 抓飯店評論
+            server: false
+        }) 
+    ]);
 
+    // 3. 找出「我寫過的所有評論」的 booking_id 集合
+    // 假設評論資料裡有 user_id 或 booking_id
+    const myReviewBookingIds = reviewsRes
+        .filter(r => r.user_id === userState.value.id)
+        .map(r => r.booking_id);
+
+    // 4. 篩選出：(是這間飯店) AND (已退房) AND (尚未評論過) 的訂單
+    // 注意：這裡假設 UserHistory 裡的 check_out 是過去時間
+    const validBooking = historyList.find(b => 
+        b.hotel_name === props.hotelName && // 是這間飯店
+        !myReviewBookingIds.includes(b.booking_id) // 且 這筆訂單還沒被評論過
+    );
+
+    if (validBooking) {
+      canReview.value = true;
+      bookingId.value = validBooking.booking_id; // 綁定這筆還沒評過的訂單
+      console.log('✅ 找到可評論的訂單 ID:', bookingId.value);
+    } else {
+      console.log('❌ 沒有可評論的訂單 (沒住過 或 全部都評過了)');
+      canReview.value = false;
+      
+      // 如果找不到「未評論」的，但有「已評論」的，我們可以顯示 "您已評論過"
+      if (myReviewBookingIds.length > 0) {
+          hasReviewed.value = true; 
+      }
+    }
+
+  } catch (e) { console.error(e); }
+};
+// 當評論被刪除時觸發
+const handleReviewDeleted = async () => {
+    // 1. 先把狀態重置
+    hasReviewed.value = false;
+    
+    // 2. 重新檢查資格 (這會去後端抓最新的狀態，發現沒有評論了，就會把 canReview 變回 true)
+    await checkEligibility();
+};
 onMounted(() => checkEligibility());
 
 const submitReview = async () => {
@@ -93,7 +130,8 @@ const submitReview = async () => {
         booking_id: bookingId.value,
         rating: rating.value,
         comment: comment.value
-      }
+      },
+      credentials : 'include'
     });
     Swal.fire('評論成功', '', 'success');
     hasReviewed.value = true;
