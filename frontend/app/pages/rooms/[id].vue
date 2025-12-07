@@ -120,8 +120,9 @@ const deleteThisHotel = async () => {
     isDeleting.value = true;
     try {
         // 🚀 修正：移除 headers
-        await $fetch(`${config.public.apiBase}/hotels/${route.params.id}`, { 
-            method: 'DELETE' 
+        await $fetch(`${config.public.apiBase}/hotels/delete/${route.params.id}`, { 
+            method: 'DELETE' ,
+            credentials : 'include'
         });
         Swal.fire('已刪除', '', 'success').then(() => router.push('/homeView'));
     } catch (err) {

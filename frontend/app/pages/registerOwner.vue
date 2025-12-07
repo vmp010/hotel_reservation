@@ -67,7 +67,7 @@ const handleregister = async () => {
       }
     })
     success.value = '註冊成功，將導向登入頁面'
-    setTimeout(() => router.push('/hotelierLogin'), 800)
+    setTimeout(() => router.push('/login'), 800)
   } catch (e) {
     const message = e?.data?.detail || '註冊失敗，請稍後再試'
     error.value = Array.isArray(message) ? message.join(', ') : message

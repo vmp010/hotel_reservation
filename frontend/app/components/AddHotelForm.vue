@@ -73,9 +73,9 @@ const addHotel = async () => {
                 location: hotelData.value.location,
                 room_type: hotelData.value.room_type,
                 price: hotelData.value.price
-            }
+            },
             // 如果遇到跨域問題 (localhost:3000 -> 127.0.0.1:8000)，可能需要加這行：
-            // credentials: 'include' 
+            credentials: 'include' 
         });
         
         msg.value = `✅ 成功！飯店 ID: ${response.hotel_id || response.id}`;
