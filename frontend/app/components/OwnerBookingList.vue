@@ -125,7 +125,8 @@ const { data: bookings, pending, error, refresh } = await useFetch(
     // 🚀 關鍵修改 2: 加上 server: false
     // 因為在 Docker 內 Server 端抓不到 localhost，且 Cookie 在 SSR 傳遞較麻煩
     // 直接讓瀏覽器端 (Client) 去抓，瀏覽器會自動把 HttpOnly Cookie 帶給後端
-    server: false
+    server: false,
+    credentials: 'include'
     
     // immediate: !!authToken.value <--- 刪除這行，預設就是 true
   }

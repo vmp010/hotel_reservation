@@ -54,7 +54,7 @@ onMounted(() => initializeUserSession());
 
 // API 資料 (動態 URL 支援 Docker)
 const apiBase = process.server ? 'http://host.docker.internal:8000' : 'http://localhost:8000';
-const { data: room, pending } = await useFetch(`/hotels/${route.params.id}`, { 
+const { data: room, pending , refresh } = await useFetch(`/hotels/${route.params.id}`, { 
     baseURL: apiBase, 
     key: `room-${route.params.id}` 
 });
@@ -111,7 +111,77 @@ const submitBooking = async ({ start, end }) => {
 
 // --- 管理邏輯 ---
 const isDeleting = ref(false);
-const goToEdit = () => Swal.fire('編輯', '施工中', 'info');
+const goToEdit = async () => {
+    // 1. 準備預填資料
+    // 注意：Swal 的 input 只能有一個，多個欄位要用 html 手刻
+    const { value: formValues } = await Swal.fire({
+        title: '編輯房型資訊',
+        html: `
+            <div class="text-start">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">飯店名稱</label>
+                    <input id="swal-input1" class="form-control" value="${room.value.hotel_name}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">地點</label>
+                    <input id="swal-input2" class="form-control" value="${room.value.location}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">房型</label>
+                    <select id="swal-input3" class="form-select">
+                        <option value="單人房" ${room.value.room_type === '單人房' ? 'selected' : ''}>單人房</option>
+                        <option value="雙人房" ${room.value.room_type === '雙人房' ? 'selected' : ''}>雙人房</option>
+                        <option value="四人房" ${room.value.room_type === '四人房' ? 'selected' : ''}>四人房</option>
+                        <option value="豪華套房" ${room.value.room_type === '豪華套房' ? 'selected' : ''}>豪華套房</option>
+                        <option value="家庭房" ${room.value.room_type === '家庭房' ? 'selected' : ''}>家庭房</option>
+                        <option value="總統套房" ${room.value.room_type === '總統套房' ? 'selected' : ''}>總統套房</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">價格</label>
+                    <input id="swal-input4" type="number" class="form-control" value="${room.value.price}">
+                </div>
+            </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: '儲存變更',
+        cancelButtonText: '取消',
+        preConfirm: () => {
+            // 抓取輸入的值
+            return {
+                hotel_name: document.getElementById('swal-input1').value,
+                location: document.getElementById('swal-input2').value,
+                room_type: document.getElementById('swal-input3').value,
+                price: parseInt(document.getElementById('swal-input4').value)
+            }
+        }
+    });
+
+    // 2. 如果使用者按了取消，就沒事發生
+    if (!formValues) return;
+
+    // 3. 呼叫 API 更新
+    try {
+        // API 路徑: PATCH /hotels/edit/{hotel_id}
+        // 不需要手動加 header，瀏覽器會帶 cookie
+        await $fetch(`${config.public.apiBase}/hotels/edit/${room.value.id}`, {
+            method: 'PATCH',
+            body: formValues,
+            credentials: 'include' // 確保帶上 Cookie
+        });
+
+        // 4. 成功提示
+        await Swal.fire('成功', '房型資訊已更新', 'success');
+        
+        // 5. 刷新頁面資料
+        refresh(); // 這是 useFetch 回傳的 refresh 函式
+
+    } catch (err) {
+        console.error(err);
+        Swal.fire('失敗', err.data?.detail || '更新失敗', 'error');
+    }
+};
 
 const deleteThisHotel = async () => {
     const result = await Swal.fire({ title: '確定刪除？', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: '刪除' });

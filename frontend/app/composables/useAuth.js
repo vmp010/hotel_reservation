@@ -25,7 +25,7 @@ export const performLogoutCleanup = async () => {
             credentials: 'include' // 👈 這一行非常重要！沒加的話，瀏覽器可能會忽略刪除指令
         });
     } catch (e) {
-        console.error('登出 API 呼叫失敗 (可能 Token 已過期)', e);
+        // console.error('登出 API 呼叫失敗 (可能 Token 已過期)', e);
     } finally {
         // 不管後端成不成功，前端都要清除狀態並跳轉
         user.value = null;
@@ -33,7 +33,7 @@ export const performLogoutCleanup = async () => {
             window.location.href = '/'; // 強制刷新回首頁
         }
     }
-    console.log('✅ 登出清理完成。');
+    // console.log('✅ 登出清理完成。');
 };
 
 // 4. 應用程式啟動時的初始化函式 (恢復使用者狀態)
@@ -62,13 +62,13 @@ export const initializeUserSession = async () => {
                 email: data.email,
                 role: data.role
             };
-            console.log('✅ 使用者狀態已從後端恢復:', user.value.role);
+            // console.log('✅ 使用者狀態已從後端恢復:', user.value.role);
         }
     } catch (e) {
         // 401 代表沒登入或 Token 過期，這是正常現象，清空狀態即可
         user.value = null;
         if (e.response?.status !== 401) {
-            console.error('恢復使用者狀態失敗:', e);
+            // console.error('恢復使用者狀態失敗:', e);
         }
     }
 };

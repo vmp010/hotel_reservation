@@ -54,7 +54,7 @@ const { data: rooms, pending, error } = await useFetch('http://localhost:8000/in
 // 💡 監聽 rooms 變量，確保只在數據取得時打印，用於除錯
 watch(rooms, (newValue) => {
   if (newValue && Array.isArray(newValue)) {
-    console.log('✅ API 數據已成功取得，項目數:', newValue.length);
+    // console.log('✅ API 數據已成功取得，項目數:', newValue.length);
   }
 }, { immediate: true });
 </script>
