@@ -73,14 +73,16 @@
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="card bg-success text-white h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <i class="bi bi-calendar-check display-4 opacity-50"></i>
-                            <h2 class="display-5 fw-bold mt-2">{{ bookings?.length || 0 }}</h2>
-                            <p class="card-text text-white-50">總訂單數</p>
-                        </div>
-                    </div>
-                </div>
+                  <div class="card bg-success text-white h-100 border-0 shadow-sm">
+                      <div class="card-body text-center p-4">
+                          <i class="bi bi-calendar-check display-4 opacity-50"></i>
+                          
+                          <h2 class="display-5 fw-bold mt-2">{{ paidBookingsCount }}</h2>
+                          
+                          <p class="card-text text-white-50">有效訂單數 (已付款)</p>
+                      </div>
+                  </div>
+              </div>
             </div>
 
             <h5 class="mb-3 fw-bold">快速管理</h5>
@@ -194,6 +196,16 @@ const isCheckingOut = ref(false);
 // Owner 專用資料
 const myHotels = ref([]);
 const bookings = ref([]);
+
+// 🚀 新增：計算「已付款」的訂單數量
+const paidBookingsCount = computed(() => {
+    if (!bookings.value || bookings.value.length === 0) return 0;
+    
+    // 過濾出 status 為 PAID 的訂單
+    return bookings.value.filter(item => 
+        item.status && item.status.toUpperCase() === 'PAID'
+    ).length;
+});
 
 // 初始化邏輯
 onMounted(async () => {

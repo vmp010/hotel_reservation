@@ -67,15 +67,20 @@
 <script setup>
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
-// 不需要再引入 useAuthToken 了
 
 const config = useRuntimeConfig();
 const isDeleting = ref(false);
 
 // 1. 獲取飯店列表 (GET /hotels/my_hotels)
-// 🚀 關鍵修正：移除了 headers
 const { data: responseData, pending, error, refresh: refreshHotels } = await useFetch(
-  `${config.public.apiBase}/hotels/my_hotels`
+  `${config.public.apiBase}/hotels/my_hotels`,
+  {
+    // 🚀 關鍵修改 A: 
+    // 1. server: false -> 強制在瀏覽器執行，避開 Docker 內部網路問題
+    // 2. credentials: 'include' -> 確保帶上 HttpOnly Cookie
+    server: false,
+    credentials: 'include'
+  }
 );
 
 const hotels = computed(() => {
@@ -99,9 +104,10 @@ const deleteHotel = async (id, name) => {
 
   isDeleting.value = true;
   try {
-    // 🚀 關鍵修正：移除了 headers
+    // 🚀 關鍵修改 B: 加上 credentials: 'include'
     await $fetch(`${config.public.apiBase}/hotels/delete/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      credentials: 'include' 
     });
 
     await Swal.fire({
