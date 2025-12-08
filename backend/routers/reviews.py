@@ -103,10 +103,11 @@ def delete_review(
     return {"message": "Review deleted successfully"}
 
 @router.put("/{review_id}", response_model=ReviewResponse,status_code=status.HTTP_200_OK)
-def update_review(review_id:int,
-                        review_request:ReviewUpdate,
-                        db:db_dependency,
-                        current_user:User=Depends(get_current_user)
+def update_review(
+    review_id:int,
+    review_request:ReviewUpdate,
+    db:db_dependency,
+    current_user:User=Depends(get_current_user)
 ):
     review_model = db.query(Review).filter(Review.id == review_id).first()
 
@@ -138,5 +139,7 @@ def update_review(review_id:int,
         db.add(review_model)
         db.commit()
         db.refresh(review_model)
+
+    review_model.username = current_user.username  # 為了符合 Response Schema，手動塞入 username
 
     return review_model
