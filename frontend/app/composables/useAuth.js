@@ -1,6 +1,7 @@
 import { useState } from '#app';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useApiUrl } from './useApiUrl';
 
 // 1. 儲存使用者資料 (全域狀態)
 export const useUser = () => useState('user', () => null);
@@ -15,12 +16,13 @@ export const useLoggedIn = () => {
 // 現在需要呼叫後端 API 來清除 HttpOnly Cookie
 export const performLogoutCleanup = async () => {
     const user = useUser();
-    const config = useRuntimeConfig();
-    const router = useRouter();
+    // const config = useRuntimeConfig();
+    // const router = useRouter();
+    const apiBase = useApiUrl();
 
     try {
         // 呼叫後端清除 Cookie
-        await $fetch(`${config.public.apiBase}/auth/logout`, {
+        await $fetch(`${apiBase}/auth/logout`, {
             method: 'POST',
             credentials: 'include' // 👈 這一行非常重要！沒加的話，瀏覽器可能會忽略刪除指令
         });
@@ -40,7 +42,8 @@ export const performLogoutCleanup = async () => {
 // 🚀 關鍵修改：不再解碼 Token，而是呼叫 /auth/me API
 export const initializeUserSession = async () => {
     const user = useUser();
-    const config = useRuntimeConfig();
+    // const config = useRuntimeConfig();
+    const apiBase = useApiUrl();
 
     // 如果全域狀態中已經有資料了，則不需重複執行
     if (user.value) return;
@@ -48,7 +51,7 @@ export const initializeUserSession = async () => {
     try {
         // 發送請求給後端，瀏覽器會自動帶上 HttpOnly Cookie
         // 這裡需要後端有一支 GET /auth/me 的 API
-        const data = await $fetch(`${config.public.apiBase}/auth/me`, {
+        const data = await $fetch(`${apiBase}/auth/me`, {
             retry: 0, // 不需要重試，失敗就代表沒登入
             // 🚨 強制瀏覽器攜帶 Cookie (憑證)
             credentials: 'include'

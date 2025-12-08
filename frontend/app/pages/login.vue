@@ -38,8 +38,8 @@ import { useRouter } from 'vue-router'
 import { useUser, initializeUserSession } from '~/composables/useAuth';
 
 const router = useRouter()
-const config = useRuntimeConfig()
-
+// const config = useRuntimeConfig()
+const apiBase = useApiUrl()
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
@@ -61,7 +61,7 @@ const handleLogin = async () => {
         // 2. 發送登入請求
         // 這裡不需要接回傳值 (Token)，因為後端會自動 Set-Cookie
         // 只要沒有報錯，就代表登入成功了
-        await $fetch(`${config.public.apiBase}/auth/token`, {
+        await $fetch(`${apiBase}/auth/token`, {
             method: 'POST',
             body: formData,
             // 🚨 強制攜帶 (雖然登入是寫入，但加上去保險)

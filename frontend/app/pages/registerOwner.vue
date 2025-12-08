@@ -39,7 +39,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const config = useRuntimeConfig()
+// const config = useRuntimeConfig()
+const apiBase = useApiUrl()
 
 const email = ref('')
 const ownerName = ref('')
@@ -58,7 +59,7 @@ const handleregister = async () => {
   }
   loading.value = true
   try {
-    const res = await $fetch(`${config.public.apiBase}/auth/register/owner`, {
+    const res = await $fetch(`${apiBase}/auth/register/owner`, {
       method: 'POST',
       body: {
         email: email.value,

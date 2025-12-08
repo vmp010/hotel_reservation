@@ -70,7 +70,6 @@ const emit = defineEmits(['review-deleted']);
 // 定義一個動態的 Base URL
 // 如果是在伺服器端 (Docker 內)，就用 host.docker.internal
 // 如果是在客戶端 (瀏覽器)，就用 localhost
-const apiBase = process.server ? 'http://host.docker.internal:8000' : 'http://localhost:8000';
 
 const props = defineProps({
     hotelId: {
@@ -79,7 +78,8 @@ const props = defineProps({
     }
 });
 
-const config = useRuntimeConfig();
+// const config = useRuntimeConfig();
+const apiBase = useApiUrl();
 const user = useUser(); // 取得目前登入者
 
 // 呼叫 API: GET /reviews/{hotel_id}
@@ -150,7 +150,7 @@ const editReview = async (review) => {
 
     // 3. 呼叫 API 更新
     try {
-        await $fetch(`${config.public.apiBase}/reviews/${review.id}`, {
+        await $fetch(`${apiBase}/reviews/${review.id}`, {
             method: 'PUT',
             body: formValues,
             credentials: 'include' // 確保帶上 Cookie
@@ -180,7 +180,7 @@ const deleteReview = async (reviewId) => {
     if (!result.isConfirmed) return;
 
     try {
-        await $fetch(`${config.public.apiBase}/reviews/delete/${reviewId}`, {
+        await $fetch(`${apiBase}/reviews/delete/${reviewId}`, {
             method: 'DELETE',
             credentials: 'include'
         });

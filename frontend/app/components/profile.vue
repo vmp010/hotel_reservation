@@ -180,7 +180,8 @@ import { useRouter } from 'vue-router';
 import { useUser, useLoggedIn, initializeUserSession } from '~/composables/useAuth';
 import Swal from 'sweetalert2';
 
-const config = useRuntimeConfig();
+// const config = useRuntimeConfig();
+const apiBase = useApiUrl();
 const userState = useUser();
 const isLoggedIn = useLoggedIn();
 const router = useRouter();
@@ -252,8 +253,8 @@ const refreshDashboard = async () => {
     try {
         // 3. 移除 headers，並加上 server: false 確保在瀏覽器端執行
         const [hotelsRes, bookingsRes] = await Promise.all([
-            $fetch(`${config.public.apiBase}/hotels/my_hotels`, { server: false ,credentials:'include'}),
-            $fetch(`${config.public.apiBase}/bookings/owner/all`, { server: false ,credentials:'include' })
+            $fetch(`${apiBase}/hotels/my_hotels`, { server: false ,credentials:'include'}),
+            $fetch(`${apiBase}/bookings/owner/all`, { server: false ,credentials:'include' })
         ]);
         
         myHotels.value = hotelsRes.hotels || [];
@@ -274,7 +275,7 @@ const { data: cartItems, pending: cartPending, error: cartError, refresh: refres
     if (!userState.value || userState.value.role !== 'user') return [];
     
     // 5. 移除 headers
-    return await $fetch(`${config.public.apiBase}/carts/`, { server: false ,credentials:'include' });
+    return await $fetch(`${apiBase}/carts/`, { server: false ,credentials:'include' });
   },
   { lazy: true, server: false, default: () => [] }
 );
@@ -300,7 +301,7 @@ const cancelHotel = async (bookingId, hotelName) => {
   isDelete.value = true;
   try {
     // 6. 移除 headers
-    await $fetch(`${config.public.apiBase}/carts/delete/${bookingId}`, {
+    await $fetch(`${apiBase}/carts/delete/${bookingId}`, {
       method: 'DELETE',
       credentials: 'include'
     });
@@ -331,7 +332,7 @@ const handleCheckout = async () => {
     isCheckingOut.value = true;
     try {
         // 7. 移除 headers
-        const res = await $fetch(`${config.public.apiBase}/carts/checkout`, {
+        const res = await $fetch(`${apiBase}/carts/checkout`, {
             method: 'POST',
             credentials: 'include'
         });

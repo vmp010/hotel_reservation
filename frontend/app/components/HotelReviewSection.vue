@@ -54,7 +54,8 @@ const props = defineProps({
   isOwner: Boolean
 });
 
-const config = useRuntimeConfig();
+// const config = useRuntimeConfig();
+const apiBase = useApiUrl();
 const userState = useUser(); // 🚨 修正：定義 userState 變數
 
 const canReview = ref(false);
@@ -73,10 +74,10 @@ const checkEligibility = async () => {
   try {
     // 2. 平行發送請求：抓「歷史訂單」跟「該飯店所有評論」
     const [historyList, reviewsRes] = await Promise.all([
-        $fetch(`${config.public.apiBase}/bookings/UserHistory`, {
+        $fetch(`${apiBase}/bookings/UserHistory`, {
             server: false, credentials: 'include'
         }),
-        $fetch(`${config.public.apiBase}/reviews/${props.hotelId}`, { // 假設有這支 API 抓飯店評論
+        $fetch(`${apiBase}/reviews/${props.hotelId}`, { // 假設有這支 API 抓飯店評論
             server: false
         }) 
     ]);
@@ -123,7 +124,7 @@ onMounted(() => checkEligibility());
 const submitReview = async () => {
   isSubmitting.value = true;
   try {
-    await $fetch(`${config.public.apiBase}/reviews/create`, {
+    await $fetch(`${apiBase}/reviews/create`, {
       method: 'POST',
       body: {
         hotel_id: parseInt(props.hotelId),

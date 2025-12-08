@@ -45,10 +45,10 @@
 
 <script setup>
 import { watch } from 'vue';
-
+const apiBase = useApiUrl()
 // 🚀 核心修正：直接將 useFetch 的 data 解構賦值給 rooms
 // 因為您的 API 返回的是頂層陣列，而不是 { data: [...] }
-const { data: rooms, pending, error } = await useFetch('http://localhost:8000/index/', {
+const { data: rooms, pending, error } = await useFetch(`${apiBase}/index/`, {
     server: false // <-- 禁用 SSR 階段的資料請求
 });
 // 💡 監聽 rooms 變量，確保只在數據取得時打印，用於除錯

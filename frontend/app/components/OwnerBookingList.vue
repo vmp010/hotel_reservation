@@ -105,7 +105,8 @@
 // import { useAuthToken } from '~/composables/useAuth'; 
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 
-const config = useRuntimeConfig();
+// const config = useRuntimeConfig();
+const apiBase = useApiUrl();
 // ❌ 移除這行
 // const authToken = useAuthToken(); 
 
@@ -117,7 +118,7 @@ const itemsPerPage = 4;
 
 // API 請求
 const { data: bookings, pending, error, refresh } = await useFetch(
-  `${config.public.apiBase}/bookings/owner/all`,
+  `${apiBase}/bookings/owner/all`,
   {
     // 🚀 關鍵修改 1: 移除 headers
     // headers: { 'Authorization': `Bearer ${authToken.value}` }, <--- 刪除這行

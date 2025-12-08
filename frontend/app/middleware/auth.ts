@@ -21,7 +21,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
             const headers = useRequestHeaders(['cookie']);
             
             const data = await $fetch(`${apiBase}/auth/me`, {
-                headers: headers
+                headers: headers,
+                credentials : 'include'
             });
             
             if (data) user.value = data;

@@ -77,12 +77,13 @@
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
 
-const config = useRuntimeConfig();
+// const config = useRuntimeConfig();
+const apiBase = useApiUrl();
 const isDeleting = ref(false);
 
 // 1. 獲取飯店列表 (GET /hotels/my_hotels)
 const { data: responseData, pending, error, refresh: refreshHotels } = await useFetch(
-  `${config.public.apiBase}/hotels/my_hotels`,
+  `${apiBase}/hotels/my_hotels`,
   {
     // 🚀 關鍵修改 A: 
     // 1. server: false -> 強制在瀏覽器執行，避開 Docker 內部網路問題
@@ -114,7 +115,7 @@ const deleteHotel = async (id, name) => {
   isDeleting.value = true;
   try {
     // 🚀 關鍵修改 B: 加上 credentials: 'include'
-    await $fetch(`${config.public.apiBase}/hotels/delete/${id}`, {
+    await $fetch(`${apiBase}/hotels/delete/${id}`, {
       method: 'DELETE',
       credentials: 'include' 
     });

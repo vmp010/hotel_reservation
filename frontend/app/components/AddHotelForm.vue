@@ -45,11 +45,12 @@
 <script setup>
 import { ref } from 'vue';
 // 不需要再引入 useAuthToken 了
-import { useRuntimeConfig } from '#app';
+// import { useRuntimeConfig } from '#app';
 
-const config = useRuntimeConfig();
+// const config = useRuntimeConfig();
+const apiBase = useApiUrl();
 // 建議改用 config 設定的 API Base，比較彈性
-const API_URL = `${config.public.apiBase}/hotels/create`;
+const API_URL = `${apiBase}/hotels/create`;
 
 const hotelData = ref({ hotel_name: '', location: '', room_type: '', price: null });
 const msg = ref('');

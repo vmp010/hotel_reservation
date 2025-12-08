@@ -63,7 +63,7 @@ import { useUser, initializeUserSession } from '~/composables/useAuth';
 // ❌ 移除 useAuthToken
 
 definePageMeta({ middleware: 'auth' })
-
+const apiBase = useApiUrl();
 const user = useUser();
 
 // 初始化狀態 (打 API)
@@ -72,7 +72,7 @@ onMounted(() => {
 });
 
 // API 資料 (server: false 避開 Docker 問題)
-const { data: rooms, pending, error } = await useFetch('http://127.0.0.1:8000/hotels', {
+const { data: rooms, pending, error } = await useFetch(`${apiBase}/hotels`, {
     server: false
 });
 

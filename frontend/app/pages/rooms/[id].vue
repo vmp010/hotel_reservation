@@ -46,14 +46,14 @@ import HotelReviewSection from '~/components/HotelReviewSection.vue';
 
 const route = useRoute();
 const router = useRouter();
-const config = useRuntimeConfig();
+// const config = useRuntimeConfig();
 const user = useUser();
-
+const apiBase = useApiUrl();
 // 狀態恢復
 onMounted(() => initializeUserSession());
 
 // API 資料 (動態 URL 支援 Docker)
-const apiBase = process.server ? 'http://host.docker.internal:8000' : 'http://localhost:8000';
+
 const { data: room, pending , refresh } = await useFetch(`/hotels/${route.params.id}`, { 
     baseURL: apiBase, 
     key: `room-${route.params.id}` 
@@ -64,7 +64,7 @@ const isOwner = computed(() => user.value && room.value && user.value.role === '
 
 // --- 訂房邏輯 ---
 const isBooking = ref(false);
-const { data: unavailableData } = await useFetch(() => `${config.public.apiBase}/bookings/unavailable_dates/${route.params.id}`, { lazy: true, server: false, default: () => [] ,credentials:'include'});
+const { data: unavailableData } = await useFetch(() => `${apiBase}/bookings/unavailable_dates/${route.params.id}`, { lazy: true, server: false, default: () => [] ,credentials:'include'});
 
 const disabledDates = computed(() => {
     return (unavailableData.value || []).map(b => ({ 
@@ -86,7 +86,7 @@ const submitBooking = async ({ start, end }) => {
         const payload = { hotel_id: parseInt(route.params.id), checkin_date: start, checkout_date: end };
         
         // 🚀 修正：移除 headers，瀏覽器自動帶 Cookie
-        await $fetch(`${config.public.apiBase}/bookings/create`, { 
+        await $fetch(`${apiBase}/bookings/create`, { 
             method: 'POST', 
             body: payload ,
             credentials: 'include' // 試試看加上這行
@@ -94,7 +94,7 @@ const submitBooking = async ({ start, end }) => {
         
         try {
             // 🚀 修正：移除 headers
-            await $fetch(`${config.public.apiBase}/carts/add/${route.params.id}`, { 
+            await $fetch(`${apiBase}/carts/add/${route.params.id}`, { 
                 method: 'POST' ,
                 credentials: 'include' // 試試看加上這行
             });
@@ -165,7 +165,7 @@ const goToEdit = async () => {
     try {
         // API 路徑: PATCH /hotels/edit/{hotel_id}
         // 不需要手動加 header，瀏覽器會帶 cookie
-        await $fetch(`${config.public.apiBase}/hotels/edit/${room.value.id}`, {
+        await $fetch(`${apiBase}/hotels/edit/${room.value.id}`, {
             method: 'PATCH',
             body: formValues,
             credentials: 'include' // 確保帶上 Cookie
@@ -190,7 +190,7 @@ const deleteThisHotel = async () => {
     isDeleting.value = true;
     try {
         // 🚀 修正：移除 headers
-        await $fetch(`${config.public.apiBase}/hotels/delete/${route.params.id}`, { 
+        await $fetch(`${apiBase}/hotels/delete/${route.params.id}`, { 
             method: 'DELETE' ,
             credentials : 'include'
         });
