@@ -106,6 +106,15 @@ const currentTab = ref('AddHotelForm');
 </script>
 
 <style scoped>
+/* 顏色 */
+.bg-light {
+  background-color: #f5f7fa !important;  /* 更柔和的淡灰色 */
+}
+/* 卡牌 */
+.card {
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
 /* 自定義 Active 樣式：左側有藍色線條，背景淡藍 */
 .active-tab {
   background-color: #f0f7ff !important; /* 極淡的藍色背景 */

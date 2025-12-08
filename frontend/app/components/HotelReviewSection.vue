@@ -78,7 +78,7 @@ const checkEligibility = async () => {
             server: false, credentials: 'include'
         }),
         $fetch(`${apiBase}/reviews/${props.hotelId}`, { // 假設有這支 API 抓飯店評論
-            server: false
+            server: false , credentials: 'include'
         }) 
     ]);
 
