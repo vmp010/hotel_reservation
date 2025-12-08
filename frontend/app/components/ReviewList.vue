@@ -18,14 +18,22 @@
                         {{ review.username || '匿名旅客' }}
                     </div>
                     
-                    <button 
-                        v-if="isMyReview(review.user_id)" 
-                        class="btn btn-sm btn-outline-danger border-0"
-                        @click="deleteReview(review.id)"
-                        title="刪除我的評論"
-                    >
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <div v-if="isMyReview(review.user_id)" class="d-flex gap-2">
+                        <button 
+                            class="btn btn-sm btn-outline-primary border-0"
+                            @click="editReview(review)"
+                            title="編輯我的評論"
+                        >
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button 
+                            class="btn btn-sm btn-outline-danger border-0"
+                            @click="deleteReview(review.id)"
+                            title="刪除我的評論"
+                        >
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -90,6 +98,71 @@ const isMyReview = (reviewUserId) => {
     if (!user.value) return false;
     // 比對 user.id
     return String(user.value.id) === String(reviewUserId);
+};
+
+// 編輯評論邏輯 (新增)
+const editReview = async (review) => {
+    // 1. 彈出編輯視窗 (使用 HTML 自定義表單)
+    const { value: formValues } = await Swal.fire({
+        title: '編輯評論',
+        html: `
+            <div class="text-start">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">評分 (1-5)</label>
+                    <select id="swal-edit-rating" class="form-select">
+                        <option value="5" ${review.rating === 5 ? 'selected' : ''}>⭐⭐⭐⭐⭐ (5)</option>
+                        <option value="4" ${review.rating === 4 ? 'selected' : ''}>⭐⭐⭐⭐ (4)</option>
+                        <option value="3" ${review.rating === 3 ? 'selected' : ''}>⭐⭐⭐ (3)</option>
+                        <option value="2" ${review.rating === 2 ? 'selected' : ''}>⭐⭐ (2)</option>
+                        <option value="1" ${review.rating === 1 ? 'selected' : ''}>⭐ (1)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">評論內容</label>
+                    <textarea id="swal-edit-comment" class="form-control" rows="3">${review.comment}</textarea>
+                </div>
+            </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: '儲存修改',
+        cancelButtonText: '取消',
+        // 在使用者按下確認時，抓取輸入的值
+        preConfirm: () => {
+            const ratingStr = document.getElementById('swal-edit-rating').value;
+            const comment = document.getElementById('swal-edit-comment').value;
+
+            // 簡單驗證
+            if (!comment.trim()) {
+                Swal.showValidationMessage('評論內容不能為空');
+                return false;
+            }
+
+            return {
+                rating: parseInt(ratingStr), // API 要求整數
+                comment: comment
+            };
+        }
+    });
+
+    // 2. 如果使用者取消，就結束
+    if (!formValues) return;
+
+    // 3. 呼叫 API 更新
+    try {
+        await $fetch(`${config.public.apiBase}/reviews/${review.id}`, {
+            method: 'PUT',
+            body: formValues,
+            credentials: 'include' // 確保帶上 Cookie
+        });
+
+        Swal.fire('成功', '您的評論已更新', 'success');
+        refresh(); // 4. 刷新列表顯示最新內容
+
+    } catch (err) {
+        console.error(err);
+        Swal.fire('失敗', err.data?.detail || '更新失敗', 'error');
+    }
 };
 
 // 刪除評論邏輯
