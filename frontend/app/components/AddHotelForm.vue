@@ -108,7 +108,8 @@
 import { ref, reactive } from 'vue';
 import Swal from 'sweetalert2';
 
-const config = useRuntimeConfig();
+// const config = useRuntimeConfig();
+const apiBase = useApiUrl()
 
 // 定義資料結構
 const hotelData = reactive({
@@ -127,7 +128,7 @@ const handleSubmit = async () => {
   await new Promise(resolve => setTimeout(resolve, 800));
 
   try {
-    const response = await $fetch(`${config.public.apiBase}/hotels/create`, {
+    const response = await $fetch(`${apiBase}/hotels/create`, {
       method: 'POST',
       body: { ...hotelData, price: Number(hotelData.price) }, // 確保價格是數字
       credentials: 'include'
