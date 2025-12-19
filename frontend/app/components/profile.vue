@@ -48,7 +48,7 @@
 
             <button class="btn" :class="currentTab === 'profile' ? 'btn-primary' : 'btn-outline-primary'"
               @click="currentTab = 'profile'">
-              <i class="bi bi-person-lines-fill me-2"></i> 編輯個人資料
+              <i class="bi bi-person-lines-fill me-2"></i> 修改密碼、信箱
             </button>
           </div>
         </div>
@@ -153,18 +153,69 @@
           </div>
 
           <div v-else-if="currentTab === 'profile'">
-            <h4 class="mb-4">
-              <i class="bi bi-pencil-square me-2"></i> 編輯個人資料
+            <h4 class="mb-4 fw-bold">
+              <i class="bi bi-shield-lock-fill me-2"></i> 帳號安全設定
             </h4>
-            <form @submit.prevent="updateProfile">
-              <div class="mb-3"><label class="form-label">姓名</label><input v-model="profile.name" type="text" class="form-control" /></div>
-              <div class="mb-3"><label class="form-label">Email</label><input v-model="profile.email" type="email" class="form-control" /></div>
-              <div class="mb-3"><label class="form-label">電話</label><input v-model="profile.phone" type="text" class="form-control" /></div>
-              <div class="mb-3"><label class="form-label">地址</label><input v-model="profile.address" type="text" class="form-control" /></div>
-              <div class="text-end">
-                <button class="btn btn-primary"><i class="bi bi-save me-2"></i> 儲存變更</button>
+
+            <div class="row g-4">
+              <div class="col-12">
+                <div class="card shadow-sm border-0">
+                  <div class="card-header bg-light fw-bold py-3">
+                    <i class="bi bi-envelope me-2"></i>變更電子郵件
+                  </div>
+                  <div class="card-body p-4">
+                    <form @submit.prevent="updateEmail">
+                      <div class="mb-3">
+                        <label class="form-label text-muted small">目前的 Email</label>
+                        <input type="text" class="form-control bg-light" :value="userState.email" disabled />
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label fw-bold">新 Email</label>
+                        <input v-model="profileForm.newEmail" type="email" class="form-control" placeholder="請輸入新的電子信箱" required />
+                      </div>
+                      <div class="text-end">
+                        <button class="btn btn-primary" :disabled="isUpdatingEmail">
+                          <span v-if="isUpdatingEmail" class="spinner-border spinner-border-sm me-1"></span>
+                          更新 Email
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
               </div>
-            </form>
+
+              <div class="col-12">
+                <div class="card shadow-sm border-0">
+                  <div class="card-header bg-light fw-bold py-3">
+                    <i class="bi bi-key me-2"></i>變更密碼
+                  </div>
+                  <div class="card-body p-4">
+                    <form @submit.prevent="updatePassword">
+                      <div class="mb-3">
+                        <label class="form-label fw-bold">舊密碼</label>
+                        <input v-model="passwordForm.oldPassword" type="password" class="form-control" placeholder="驗證身分用" required />
+                      </div>
+                      <div class="row">
+                        <div class="col-md-6 mb-3">
+                          <label class="form-label fw-bold">新密碼</label>
+                          <input v-model="passwordForm.newPassword" type="password" class="form-control" placeholder="至少 6 位數" minlength="6" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                          <label class="form-label fw-bold">確認新密碼</label>
+                          <input v-model="passwordForm.confirmPassword" type="password" class="form-control" placeholder="再次輸入新密碼" required />
+                        </div>
+                      </div>
+                      <div class="text-end">
+                        <button class="btn btn-warning text-dark" :disabled="isUpdatingPassword">
+                          <span v-if="isUpdatingPassword" class="spinner-border spinner-border-sm me-1"></span>
+                          變更密碼
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -190,7 +241,13 @@ const router = useRouter();
 const currentTab = ref(''); 
 
 // 資料狀態
-const profile = ref({ name: "", email: "", phone: "", address: "" });
+// ✅ 新增：表單狀態
+const profileForm = ref({ newEmail: '' });
+const passwordForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' });
+// const profile = ref({ name: "", email: "", phone: "", address: "" });
+const isUpdatingEmail = ref(false);
+const isUpdatingPassword = ref(false);
+//
 const isDelete = ref(false);
 const isCheckingOut = ref(false);
 
@@ -215,7 +272,6 @@ onMounted(async () => {
     
     // 如果身分恢復成功 (userState 有值)，載入對應 Tab
     if (userState.value) {
-        syncProfileData(userState.value);
         if (userState.value.role === 'owner') {
             currentTab.value = 'dashboard';
             refreshDashboard(); 
@@ -229,20 +285,68 @@ onMounted(async () => {
 // 監聽 userState 變化 (防止 F5 刷新後資料不同步)
 watch(userState, (newUser) => {
     if (newUser) {
-        syncProfileData(newUser);
         if (!currentTab.value) {
             currentTab.value = newUser.role === 'owner' ? 'dashboard' : 'cart';
         }
     }
 }, { immediate: true });
+// 更改密碼、信箱
+const updateEmail = async () => {
+    if (!profileForm.value.newEmail) return;
 
-function syncProfileData(user) {
-    profile.value.name = user.username || '無用戶名';
-    profile.value.email = user.email || '無電子郵件';
-    profile.value.phone = user.phone || '';
-    profile.value.address = user.address || '';
-}
+    isUpdatingEmail.value = true;
+    try {
+        await $fetch(`${apiBase}/users/update_email`, { // 假設後端有這支 API
+            method: 'PUT',
+            body: { new_email: profileForm.value.newEmail },
+            credentials: 'include'
+        });
 
+        await Swal.fire('成功', 'Email 已更新，下次登入請使用新信箱', 'success');
+        
+        // 更新前端狀態
+        if (userState.value) userState.value.email = profileForm.value.newEmail;
+        profileForm.value.newEmail = ''; // 清空輸入框
+
+    } catch (err) {
+        Swal.fire('失敗', err.data?.detail || '更新失敗', 'error');
+    } finally {
+        isUpdatingEmail.value = false;
+    }
+};
+// 🚀 功能 2：更新密碼
+const updatePassword = async () => {
+    // 前端簡單驗證
+    if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+        Swal.fire('錯誤', '兩次輸入的新密碼不一致', 'error');
+        return;
+    }
+    isUpdatingPassword.value = true;
+    try {
+        await $fetch(`${apiBase}/users/update_password`, { // 假設後端有這支 API
+            method: 'PUT',
+            body: {
+                old_password: passwordForm.value.oldPassword,
+                new_password: passwordForm.value.newPassword
+            },
+            credentials: 'include'
+        });
+
+        await Swal.fire('成功', '密碼已變更，請重新登入', 'success');
+        
+        // 登出流程 (因為改密碼通常會讓 Token 失效)
+        const { performLogoutCleanup } = await import('~/composables/useAuth');
+        await performLogoutCleanup();
+
+    } catch (err) {
+        console.error(err);
+        Swal.fire('失敗', err.data?.detail || '密碼變更失敗 (舊密碼錯誤？)', 'error');
+    } finally {
+        isUpdatingPassword.value = false;
+        // 清空表單
+        passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' };
+    }
+};
 // ==========================================
 // 🟥 Owner 邏輯：儀表板數據
 // ==========================================
@@ -357,9 +461,4 @@ const handleCheckout = async () => {
         isCheckingOut.value = false;
     }
 };
-
-function updateProfile() {
-  console.log("資料已更新！", profile.value);
-  Swal.fire('成功', '個人資料已更新 (模擬)', 'success');
-}
 </script>
