@@ -147,7 +147,7 @@ async def get_user_booking_history(db:db_dependency,
             nights = 1
             
         total_price = hotel.price * nights
-
+      #fordebug
         # 3. 組裝回傳資料
         results.append(UserBookingResponse(
             booking_id=booking.id,
