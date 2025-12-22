@@ -56,7 +56,7 @@
                 :class="currentTab === 'history' ? 'btn-primary' : 'btn-outline-primary'"
                 @click="currentTab = 'history'"
             >
-                <i class="bi bi-clock-history me-2"></i> 歷史訂單
+                <i class="bi bi-clock-history me-2"></i> 我的訂單
             </button>
           </div>
         </div>

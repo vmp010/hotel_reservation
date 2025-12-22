@@ -24,7 +24,7 @@
                   <NuxtLink class="nav-link" to="/register">註冊</NuxtLink>
                 </li>
                 <li class="nav-item" v-if="loggedIn">
-                  <NuxtLink class="nav-link" to="/about">人物</NuxtLink>
+                  <NuxtLink class="nav-link" to="/about">個人資料</NuxtLink>
                 </li>
                 <li class="nav-item" v-if="loggedIn">
                   <button class="nav-link" @click="handleLogout">登出</button> 

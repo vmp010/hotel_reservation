@@ -67,49 +67,65 @@ const bookingId = ref(null);
 const reviewListRef = ref(null);
 
 // 檢查資格
+// 檢查資格 (修正版：使用數量比對法)
 const checkEligibility = async () => {
   // 1. 基本檢查
   if (!userState.value || props.isOwner) return;
   
   try {
-    // 2. 平行發送請求：抓「歷史訂單」跟「該飯店所有評論」
     const [historyList, reviewsRes] = await Promise.all([
         $fetch(`${apiBase}/bookings/UserHistory`, {
             server: false, credentials: 'include'
         }),
-        $fetch(`${apiBase}/reviews/${props.hotelId}`, { // 假設有這支 API 抓飯店評論
+        $fetch(`${apiBase}/reviews/${props.hotelId}`, { 
             server: false , credentials: 'include'
         }) 
     ]);
 
-    // 3. 找出「我寫過的所有評論」的 booking_id 集合
-    // 假設評論資料裡有 user_id 或 booking_id
-    const myReviewBookingIds = reviewsRes
-        .filter(r => r.user_id === userState.value.id)
-        .map(r => r.booking_id);
-
-    // 4. 篩選出：(是這間飯店) AND (已退房) AND (尚未評論過) 的訂單
-    // 注意：這裡假設 UserHistory 裡的 check_out 是過去時間
-    const validBooking = historyList.find(b => 
-        b.hotel_name === props.hotelName && // 是這間飯店
-        !myReviewBookingIds.includes(b.booking_id) // 且 這筆訂單還沒被評論過
+    // 2. 找出「這間飯店」我住過的所有訂單
+    // 注意：這裡建議可以加一個篩選，只算 "已付款" 或 "已完成" 的訂單
+    const myStaysAtThisHotel = historyList.filter(b => 
+        String(b.hotel_id) === String(props.hotelId)
     );
 
-    if (validBooking) {
-      canReview.value = true;
-      bookingId.value = validBooking.booking_id; // 綁定這筆還沒評過的訂單
-      console.log('✅ 找到可評論的訂單 ID:', bookingId.value);
+    // 3. 找出「這間飯店」我寫過的所有評論
+    const myReviewsAtThisHotel = reviewsRes.filter(r => 
+        String(r.user_id) === String(userState.value.id)
+    );
+
+    // console.log(`在此飯店住宿次數: ${myStaysAtThisHotel.length}, 評論次數: ${myReviewsAtThisHotel.length}`);
+
+    // 4. 核心邏輯：數量比對
+    // 如果「評論數」少於「住宿數」，代表還有扣打可以評
+    if (myReviewsAtThisHotel.length < myStaysAtThisHotel.length) {
+        canReview.value = true;
+        hasReviewed.value = false;
+
+        // 5. 綁定 Booking ID (這是此方法的唯一小缺點)
+        // 因為不知道哪一筆沒評，我們預設綁定「最新的一筆」或「第一筆」住宿
+        // 這樣至少送出時會有一個有效的 booking_id
+        if (myStaysAtThisHotel.length > 0) {
+            // 假設 API 回傳排序是新的在前面，我們就抓第一筆
+            // 或是您可以寫邏輯抓 id 最大的
+            bookingId.value = myStaysAtThisHotel[0].booking_id;
+        }
+        
+        // console.log('✅ 尚有未評論的住宿，開放評論。綁定 ID:', bookingId.value);
+
     } else {
-      console.log('❌ 沒有可評論的訂單 (沒住過 或 全部都評過了)');
-      canReview.value = false;
-      
-      // 如果找不到「未評論」的，但有「已評論」的，我們可以顯示 "您已評論過"
-      if (myReviewBookingIds.length > 0) {
-          hasReviewed.value = true; 
-      }
+        // 評論數 >= 住宿數，代表都評過了
+        // console.log('✅ 所有住宿皆已評論');
+        canReview.value = false;
+        
+        // 如果有住過且評過了，顯示「您已評論過」
+        if (myStaysAtThisHotel.length > 0) {
+            hasReviewed.value = true;
+        }
     }
 
-  } catch (e) { console.error(e); }
+  } catch (e) { 
+      console.error('檢查評論資格失敗:', e); 
+  }
 };
 // 當評論被刪除時觸發
 const handleReviewDeleted = async () => {
