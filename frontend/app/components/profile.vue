@@ -50,11 +50,20 @@
               @click="currentTab = 'profile'">
               <i class="bi bi-person-lines-fill me-2"></i> 修改密碼、信箱
             </button>
+            <button 
+                v-if="userState.role === 'user'" 
+                class="btn" 
+                :class="currentTab === 'history' ? 'btn-primary' : 'btn-outline-primary'"
+                @click="currentTab = 'history'"
+            >
+                <i class="bi bi-clock-history me-2"></i> 歷史訂單
+            </button>
           </div>
         </div>
       </div>
 
       <div class="col-md-8">
+        <!-- 業主 -->
         <div class="card shadow-sm p-4 h-100">
           
           <div v-if="currentTab === 'dashboard' && userState.role === 'owner'">
@@ -104,6 +113,10 @@
             </div>
           </div>
 
+          <!--  使用者  -->
+          <div v-else-if="currentTab === 'history' && userState.role === 'user'">
+              <UserBookingHistory />
+          </div>  
           <div v-else-if="currentTab === 'cart' && userState.role === 'user'">
             <h4 class="mb-4">
               <i class="bi bi-cart-fill me-2"></i> 我的購物車
@@ -230,6 +243,8 @@ import { useRouter } from 'vue-router';
 // 1. 移除 useAuthToken
 import { useUser, useLoggedIn, initializeUserSession } from '~/composables/useAuth';
 import Swal from 'sweetalert2';
+// ... 其他 import
+import UserBookingHistory from '~/components/UserBookingHistory.vue'; // ✅ 引入
 
 // const config = useRuntimeConfig();
 const apiBase = useApiUrl();
