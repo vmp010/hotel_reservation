@@ -99,6 +99,7 @@ async def get_my_booking(
         # 3. 組裝回傳資料
         results.append(UserBookingResponse(
             booking_id=booking.id,
+            hotel_id=hotel.id,
             hotel_name=hotel.hotel_name,
             location=hotel.location,
             room_type=hotel.room_type,
@@ -150,6 +151,7 @@ async def get_user_booking_history(db:db_dependency,
         # 3. 組裝回傳資料
         results.append(UserBookingResponse(
             booking_id=booking.id,
+            hotel_id=hotel.id,
             hotel_name=hotel.hotel_name,
             location=hotel.location,
             room_type=hotel.room_type,

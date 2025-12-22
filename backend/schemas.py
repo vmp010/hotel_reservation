@@ -85,6 +85,7 @@ class OwnerBookingResponse(BaseModel):
 
 class UserBookingResponse(BaseModel):
     booking_id: int
+    hotel_id: int
     hotel_name: str
     location: str
     room_type: str
