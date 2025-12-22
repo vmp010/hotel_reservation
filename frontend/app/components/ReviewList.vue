@@ -95,8 +95,14 @@ const { data: reviews, pending, refresh } = await useFetch(
 
 // 判斷是否為自己的評論
 const isMyReview = (reviewUserId) => {
+    // 1. 沒登入就不用看了
     if (!user.value) return false;
-    // 比對 user.id
+
+    // 2. 如果是業者 (Owner)，絕對不能編輯或刪除旅客的評論
+    // (除非您未來想做「管理者刪除惡意評論」的功能，那是另一回事)
+    if (user.value.role === 'owner') return false;
+
+    // 3. 比對 User ID
     return String(user.value.id) === String(reviewUserId);
 };
 
