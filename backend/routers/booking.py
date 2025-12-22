@@ -67,7 +67,7 @@ async def get_my_booking(
         Booking.user_id==user.id,
         Booking.status=="PAID",
         Booking.checkin_date>=today_str
-    ).all
+    ).all()
 
     results=[]
 
