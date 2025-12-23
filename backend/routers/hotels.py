@@ -1,15 +1,50 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlmodel import func
-from models import Hotel, Owner
+from sqlmodel import func,and_, or_
+from models import Hotel, Owner,Booking
 from auth import get_current_owner
 from auth import db_dependency
 from schemas import HotelCreate, HotelEditRequest
+from datetime import datetime,date
+from typing import Optional,List
+
 
 router = APIRouter(
     prefix="/hotels",
     tags=["hotels"]
 )
+
+@router.get("/search/", status_code=status.HTTP_200_OK)
+async def search_avaliable_hotels(db: db_dependency,
+                                  checkin_date: date=Query(...,description="入住日期 (YYYY-MM-DD)"),
+                                  checkout_date: date=Query(...,description="退房日期 (YYYY-MM-DD)"),
+                                  location: Optional[str]=Query(None,description="地點"),
+                                  ):
+    today=date.today()
+    if checkin_date < today :
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="日期不可早於今日")
+    
+    if checkin_date >= checkout_date:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="退房日期必須晚於入住日期")
+    
+    #子查詢:找出有重疊訂單的飯店ID
+    occupied_hotels_id=db.query(Booking.hotel_id).filter(
+        Booking.status==True,
+        and_(
+            Booking.checkin_date < checkout_date,
+            Booking.checkout_date > checkin_date
+        )
+    ).subquery()
+    
+    query=db.query(Hotel).filter(
+        Hotel.id.notin_(occupied_hotels_id)
+    )
+    if location:
+        query=query.filter(Hotel.location.ilike(f"%{location}%"))
+
+    available_hotels=query.all()
+
+    return available_hotels
 
 @router.post("/create", status_code=status.HTTP_201_CREATED)
 async def create_hotel(hotel: HotelCreate,
