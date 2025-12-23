@@ -3,32 +3,42 @@
     <div class="row">
       <div class="col-md-3">
         
-        <div class="card p-3 shadow-sm mb-4">
-            <h5 class="fw-bold mb-3">入住日期篩選</h5>
-            
-            <div class="mb-3">
-                <label class="form-label small text-muted">入住日期 (Check-in)</label>
-                <input type="date" class="form-control" v-model="filterDate.start" :min="todayStr">
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label small text-muted">退房日期 (Check-out)</label>
-                <input type="date" class="form-control" v-model="filterDate.end" :min="filterDate.start || todayStr">
-            </div>
-            
-            <button class="btn btn-primary w-100" @click="applyDateFilter" :disabled="!isDateValid || isSearching">
-                <span v-if="isSearching" class="spinner-border spinner-border-sm me-1"></span>
-                <i v-else class="bi bi-funnel"></i> 
-                {{ isSearching ? '搜尋中...' : '篩選空房' }}
-            </button>
-            
-            <div v-if="dateFilterApplied" class="mt-2 text-center">
-                <small class="text-success"><i class="bi bi-check-circle"></i> 已套用篩選</small>
-                <button class="btn btn-link btn-sm text-decoration-none p-0 ms-2" @click="clearDateFilter">
-                    清除重置
-                </button>
-            </div>
-        </div>
+        <div v-if="!isOwner" class="card p-3 shadow-sm mb-4">
+          <h5 class="fw-bold mb-3">🔍 搜尋條件</h5> <div class="mb-3">
+              <label class="form-label small text-muted">目的地 / 飯店名稱</label>
+              <div class="input-group">
+                  <span class="input-group-text bg-white"><i class="bi bi-geo-alt"></i></span>
+                  <input 
+                      type="text" 
+                      class="form-control" 
+                      v-model="searchLocation" 
+                      placeholder="例如：台北、高雄..."
+                  >
+              </div>
+          </div>
+
+          <div class="mb-3">
+              <label class="form-label small text-muted">入住日期 (Check-in)</label>
+              <input type="date" class="form-control" v-model="filterDate.start" :min="todayStr">
+          </div>
+          
+          <div class="mb-3">
+              <label class="form-label small text-muted">退房日期 (Check-out)</label>
+              <input type="date" class="form-control" v-model="filterDate.end" :min="filterDate.start || todayStr">
+          </div>
+          
+          <button class="btn btn-primary w-100" @click="applyDateFilter" :disabled="!isDateValid || isSearching">
+              <span v-if="isSearching" class="spinner-border spinner-border-sm me-1"></span>
+              <i v-else class="bi bi-search"></i> {{ isSearching ? '搜尋中...' : '開始搜尋' }}
+          </button>
+          
+          <div v-if="dateFilterApplied" class="mt-2 text-center">
+              <small class="text-success"><i class="bi bi-check-circle"></i> 已顯示搜尋結果</small>
+              <button class="btn btn-link btn-sm text-decoration-none p-0 ms-2" @click="clearDateFilter">
+                  清除重置
+              </button>
+          </div>
+      </div>
         <div class="card p-3 shadow-sm">
           <h5 class="fw-bold mb-3">房間分類</h5>
           <ul class="list-group list-group-flush">
@@ -113,6 +123,8 @@ const todayStr = new Date().toISOString().split('T')[0];
 const filterDate = ref({ start: '', end: '' });
 const dateFilterApplied = ref(false); // 是否已套用篩選
 const isSearching = ref(false);       // 搜尋按鈕的 Loading 狀態
+// --- 地點變數 ---
+const searchLocation = ref(''); // 📍 儲存地點關鍵字
 
 // 初始化
 onMounted(() => {
@@ -155,7 +167,8 @@ const applyDateFilter = async () => {
             method: 'GET',
             params: {
                 checkin_date: filterDate.value.start,
-                checkout_date: filterDate.value.end
+                checkout_date: filterDate.value.end,
+                location: searchLocation.value || undefined // 📍 關鍵：如果有填就傳，沒填就傳 undefined (後端會忽略)
             }
         });
 
@@ -164,7 +177,7 @@ const applyDateFilter = async () => {
         dateFilterApplied.value = true;
 
         if (searchResults.length === 0) {
-             Swal.fire('沒有空房', '該時段沒有符合條件的飯店，請嘗試其他日期。', 'info');
+             Swal.fire('沒有空房', '試試看調整日期或地點關鍵字。', 'info');
         }
 
     } catch (err) {
@@ -178,6 +191,7 @@ const applyDateFilter = async () => {
 // 🚀 清除篩選：恢復顯示全部飯店
 const clearDateFilter = () => {
     filterDate.value = { start: '', end: '' };
+    searchLocation.value = ''; // 📍 清空地點
     dateFilterApplied.value = false;
     
     // 呼叫 useFetch 提供的 refresh()，重新抓一次 /hotels (全部列表)
