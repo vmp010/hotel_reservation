@@ -112,8 +112,9 @@ async def get_my_hotels(db: db_dependency,
     
     hotels = db.query(Hotel).filter(
         Hotel.owner_id == current_owner.id,
-        Hotel.is_activate==True
+        Hotel.is_activate==True #加is_activate判斷是否下架
         ).all()
+    
     
     return {"hotels": hotels}
 
