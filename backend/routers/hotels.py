@@ -29,7 +29,7 @@ async def search_avaliable_hotels(db: db_dependency,
     
     #子查詢:找出有重疊訂單的飯店ID
     occupied_hotels_id=db.query(Booking.hotel_id).filter(
-        Booking.status==True,
+        Booking.status=='PAID',
         and_(
             Booking.checkin_date < checkout_date,
             Booking.checkout_date > checkin_date

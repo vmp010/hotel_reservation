@@ -65,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue'; // ✅ 1. 補上 watch
 import { format, differenceInDays } from 'date-fns';
 
 const props = defineProps({
@@ -73,12 +73,34 @@ const props = defineProps({
   isOwner: Boolean,
   disabledDates: Array,
   isDeleting: Boolean,
-  isBooking: Boolean
+  isBooking: Boolean,
+  initialDates: {
+    type: Object,
+    default: null
+  }
 });
 
 const emit = defineEmits(['edit', 'delete', 'book']);
 
-const dateRange = ref(null);
+const dateRange = ref({ start: new Date(), end: new Date() });
+
+// ✅ 2. 修改 watch 邏輯加入偵錯
+watch(() => props.initialDates, (newDates) => {
+  // 🖨️ 印出 Log 確認子元件是否收到
+  // console.log('👉 子元件 HotelInfoCard 收到 initialDates 變更:', newDates);
+
+  if (newDates && newDates.start && newDates.end) {
+    // console.log('✅ 子元件正在更新 dateRange...');
+    
+    // 確保轉為 Date 物件 (雖然父元件傳過來應該已經是 Date，但再轉一次保險)
+    dateRange.value = {
+      start: new Date(newDates.start),
+      end: new Date(newDates.end)
+    };
+  } else {
+    // console.log('⚠️ 收到空值或格式不完整的日期');
+  }
+}, { immediate: true });
 
 const formatDate = (date) => date ? format(new Date(date), 'yyyy-MM-dd') : '';
 const calculateNights = computed(() => {

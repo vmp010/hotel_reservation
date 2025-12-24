@@ -17,6 +17,8 @@
         :disabled-dates="disabledDates"
         :is-booking="isBooking"
         :is-deleting="isDeleting"
+
+        :initial-dates="prefilledDates"
         @edit="goToEdit"
         @delete="deleteThisHotel"
         @book="submitBooking"
@@ -38,19 +40,30 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Swal from 'sweetalert2';
 import { useUser, initializeUserSession } from '~/composables/useAuth';
-// ❌ 移除 useAuthToken 和 jwt-decode
-
-// 引入元件
 import HotelInfoCard from '~/components/HotelInfoCard.vue';
 import HotelReviewSection from '~/components/HotelReviewSection.vue';
+import { useApiUrl } from '~/composables/useApiUrl';
 
 const route = useRoute();
 const router = useRouter();
-// const config = useRuntimeConfig();
 const user = useUser();
 const apiBase = useApiUrl();
 // 狀態恢復
-onMounted(() => initializeUserSession());
+// 🚀 修改重點 2：新增變數來存預填日期
+const prefilledDates = ref(null);
+
+onMounted(async () => {
+    initializeUserSession();
+    
+    // 🚀 修改重點 3：一進來就檢查網址有沒有 start 和 end
+    if (route.query.start && route.query.end) {
+        prefilledDates.value = {
+            start: new Date(route.query.start),
+            end: new Date(route.query.end)
+        };
+        //  console.log('抓到預填日期:', prefilledDates.value);
+    }
+});
 
 // API 資料 (動態 URL 支援 Docker)
 
