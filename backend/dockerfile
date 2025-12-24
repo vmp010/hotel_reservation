@@ -5,7 +5,12 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-# 安裝系統相依
+RUN sed -i 's/deb.debian.org/ftp.tw.debian.org/g' /etc/apt/sources.list.d/debian.sources 2>/dev/null \
+    && sed -i 's|ftp.tw.debian.org/debian-security|security.debian.org/debian-security|g' /etc/apt/sources.list.d/debian.sources 2>/dev/null \
+    || (sed -i 's/deb.debian.org/ftp.tw.debian.org/g' /etc/apt/sources.list \
+    && sed -i 's|ftp.tw.debian.org/debian-security|security.debian.org/debian-security|g' /etc/apt/sources.list)
+    # 安裝系統相依
+    
 RUN apt-get update && apt-get install -y build-essential libssl-dev libffi-dev python3-dev default-libmysqlclient-dev && rm -rf /var/lib/apt/lists/*
 
 
