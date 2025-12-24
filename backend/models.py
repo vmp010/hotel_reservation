@@ -35,6 +35,8 @@ class Hotel(Base):
     room_type = Column(String(50))
     price = Column(Integer)
     owner_id=Column(Integer,ForeignKey("owners.id",ondelete="CASCADE"),nullable=False)
+    # 🔥 新增這個欄位：預設為 True (營業中)
+    is_activate=Column(Boolean,default=True)
 
     owner_rel=relationship("Owner",back_populates="hotels")
     users=relationship("User",secondary=user_cart,back_populates="carts",passive_deletes=True)

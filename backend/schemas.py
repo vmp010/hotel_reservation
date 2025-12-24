@@ -94,6 +94,7 @@ class UserBookingResponse(BaseModel):
     check_out: date
     total_price: int    # 我們會在後端算好總價傳過去
     is_active: bool     # 顯示是「已預訂」還是「已取消」
+    hotel_is_activate:bool #告訴前端飯店還在不在
 
     class Config:
         from_attributes = True

@@ -21,7 +21,9 @@ async def add_hotel_to_cart(hotel_id: int,
     if not hotel:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="hotel not found")
     hotel=db.query(Hotel).filter(Hotel.id==hotel_id).first()
- 
+    
+    if not hotel.is_activate:
+        raise HTTPException(status_code=400, detail="此飯店已下架，無法預訂")
     
     #🔥 資料驗證：退房日必須晚於入住日
     if cart_request.checkout_date <= cart_request.checkin_date:
@@ -70,6 +72,18 @@ async def checkout(
 
     if not cart_items:
         raise HTTPException(status_code=400, detail="購物車是空的，無法結帳")
+    
+    for item in cart_items:
+        # 透過關聯取得飯店資訊
+        hotel = item.hotel_rel 
+        
+        # 如果飯店被刪除了 (is_activate = False)
+        if not hotel or not hotel.is_activate:
+            # 做法 A: 直接報錯，叫他去整理購物車 (較嚴格)
+            raise HTTPException(
+                status_code=400, 
+                detail=f"飯店 '{hotel.hotel_name}' 已下架，請將其移出購物車後再結帳"
+            )
 
     # 2. 🔥 核心動作：狀態轉換 (CART -> PAID)
     for booking in cart_items:

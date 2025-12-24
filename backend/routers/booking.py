@@ -16,6 +16,11 @@ router = APIRouter(
 @router.get("/unavailable_dates/{hotel_id}", status_code=status.HTTP_200_OK)
 def get_unavailable_dates(hotel_id: int,
                           db: db_dependency):
+   
+    hotel = db.query(Hotel).filter(Hotel.id == hotel_id).first()
+    if not hotel or not hotel.is_activate:
+         # 兩種選擇：回傳 404 或回傳空陣列 (看前端怎麼處理)
+         raise HTTPException(status_code=404, detail="Hotel not found or unavailable")
     
     existing_Booking = db.query(Booking).filter(
         Booking.hotel_id == hotel_id,
@@ -29,6 +34,18 @@ def get_unavailable_dates(hotel_id: int,
 def create_booking(booking_request: BookingCreate,
                    db: db_dependency,
                    current_user: User = Depends(get_current_user)):
+    
+    hotel = db.query(Hotel).filter(Hotel.id == booking_request.hotel_id).first()
+    
+    # 1. 檢查飯店是否存在
+    if not hotel:
+        raise HTTPException(status_code=404, detail="Hotel not found")
+        
+    # 2. 檢查飯店是否已下架 (is_activate)
+    # 假設你在 models.py 的 Hotel 欄位叫 is_activate
+    if not hotel.is_activate:
+        raise HTTPException(status_code=400, detail="此飯店已下架，無法預訂")
+    # --- 🔥 新增這段檢查邏輯 END ---
     if booking_request.checkin_date >= booking_request.checkout_date:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Check-out date must be after check-in date")
     
@@ -107,7 +124,8 @@ async def get_my_booking(
             check_in=c_in_obj,
             check_out=c_out_obj,
             total_price=total_price, # 算好的總價
-            is_active=booking.is_active
+            is_active=booking.is_active,
+            hotel_is_active=hotel.is_activate
         ))
         
     return results

@@ -37,7 +37,8 @@ async def search_avaliable_hotels(db: db_dependency,
     ).subquery()
     
     query=db.query(Hotel).filter(
-        Hotel.id.notin_(occupied_hotels_id)
+        Hotel.id.notin_(occupied_hotels_id),
+        Hotel.is_activate == True
     )
     if location:
         query=query.filter(Hotel.location.ilike(f"%{location}%"))
@@ -60,7 +61,8 @@ async def create_hotel(hotel: HotelCreate,
         location=hotel.location,
         room_type=hotel.room_type,
         price=hotel.price,
-        owner_id=current_owner.id
+        owner_id=current_owner.id,
+        is_activate=True
     )
     
     db.add(new_hotel)
@@ -69,7 +71,7 @@ async def create_hotel(hotel: HotelCreate,
     
     return {"message": f'Hotel {new_hotel.hotel_name} created successfully', "hotel_id": new_hotel.id}
 
-@router.delete("/delete/{hotel_id}", status_code=status.HTTP_200_OK)
+@router.delete("/delete/{hotel_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_hotel(hotel_id: int,
                        db: db_dependency,
                        current_owner: Owner = Depends(get_current_owner)):
@@ -77,9 +79,12 @@ async def delete_hotel(hotel_id: int,
     hotel = db.query(Hotel).filter(Hotel.id == hotel_id, Hotel.owner_id == current_owner.id).first()
     
     if not hotel:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hotel not found or not owned by you")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hotel not found")
+    if hotel.owner_id!=current_owner.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Not authorized")
     
-    db.delete(hotel)
+    # db.delete(hotel)
+    hotel.is_activate = False
     db.commit()
     
     return {"message": f'Hotel {hotel.hotel_name} deleted successfully'}
@@ -92,6 +97,7 @@ async def get_index_hotels(db: db_dependency,
     hotels = db.query(Hotel)\
                 .group_by(Hotel.hotel_name)\
                 .filter(Hotel.owner_id == current_owner.id)\
+                .filter(Hotel.is_activate==True)\
                 .order_by(Hotel.id.desc())\
                 .limit(limit).all()
     
@@ -104,7 +110,10 @@ async def get_index_hotels(db: db_dependency,
 async def get_my_hotels(db: db_dependency,
                         current_owner: Owner = Depends(get_current_owner)):
     
-    hotels = db.query(Hotel).filter(Hotel.owner_id == current_owner.id).all()
+    hotels = db.query(Hotel).filter(
+        Hotel.owner_id == current_owner.id,
+        Hotel.is_activate==True
+        ).all()
     
     return {"hotels": hotels}
 
@@ -115,6 +124,9 @@ async def edit_hotel(hotel_id: int,
                      current_owner: Owner = Depends(get_current_owner)):
     
     hotel = db.query(Hotel).filter(Hotel.id == hotel_id, Hotel.owner_id == current_owner.id).first()
+
+    if hotel.is_activate is False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot edit a deleted hotel")
     
     if not hotel:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hotel not found or not owned by you")
