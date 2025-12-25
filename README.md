@@ -4,6 +4,12 @@
 
 ---
 
+## ✨ 更新重點
+- 專案目前使用 **SQLite** 作為資料庫，並透過 `coleifer/sqlite-web` 提供網頁介面（預設在 http://localhost:8081）。
+- 使用 Docker Compose 管理三個主要服務：**backend**（FastAPI）、**frontend**（Nuxt）與 **sqlite-web**（資料庫 UI）。
+
+---
+
 ## 🚀 快速開始
 
 ### 第一次啟動
@@ -32,15 +38,10 @@ docker compose up -d
 |------|------|------|
 | Frontend (Nuxt) | http://localhost:3000 | 前端網頁 |
 | Backend (FastAPI) | http://localhost:8000 | API 後端 |
-| API Docs | http://localhost:8000/docs | Swagger API 文件 |
-| phpMyAdmin | http://localhost:8080 | 資料庫管理介面 |
-| MySQL | localhost:3307 | 資料庫 (外部連線) |
+| API Docs (Swagger) | http://localhost:8000/docs | 自動產生的 API 文件 |
+| sqlite-web (DB UI) | http://localhost:8081 | SQLite 資料庫管理介面 |
 
-**資料庫連線資訊**：
-- 主機：`db` (容器內) 或 `localhost:3307` (外部)
-- 使用者：`admin`
-- 密碼：`admin123`
-- 資料庫名稱：`hotel_reservation`
+**資料庫（容器內）路徑**：`/data/hotel_reservation.db`（掛載至本機卷 `sqlite-data`）
 
 
 
@@ -120,6 +121,39 @@ docker compose up -d --build
 - ✅ 註冊頁面
 - ✅ 表單驗證
 - ✅ 錯誤處理與使用者提示
+
+---
+
+## 🔌 主要功能與 API（快速概要）
+
+- 身份驗證與權限
+  - POST `/auth/register/user` - 使用者註冊
+  - POST `/auth/register/owner` - 店家註冊
+  - POST `/auth/token` - 使用者/店家登入（回傳 cookie)
+  - POST `/auth/logout` - 登出
+  - GET `/auth/me` - 取得當前登入資訊
+
+- 飯店相關
+  - GET `/hotels/search/` - 搜尋可預訂的飯店（含日期與地點篩選）
+  - POST `/hotels/create` - 店家建立飯店
+  - PATCH `/hotels/edit/{hotel_id}` - 編輯飯店
+  - DELETE `/hotels/delete/{hotel_id}` - 下架飯店
+  - GET `/hotels/my_hotels` - 店家取得自己的飯店列表
+
+- 訂單 / 購物車
+  - POST `/bookings/create` - 建立訂單（立即付款）
+  - GET `/bookings/unavailable_dates/{hotel_id}` - 取得該飯店已被預訂的日期
+  - POST `/carts/add/{hotel_id}` - 加入購物車（CART）
+  - POST `/carts/checkout` - 結帳（CART -> PAID）
+  - GET `/carts/` - 取得購物車項目
+
+- 評論
+  - POST `/reviews/create` - 新增評論（需為該筆訂單的使用者）
+  - GET `/reviews/{hotel_id}` - 取得某飯店的所有評論
+  - PUT `/reviews/{review_id}` - 更新評論（僅作者）
+  - DELETE `/reviews/delete/{review_id}` - 刪除評論（僅作者）
+
+> 詳細 API 請參見 Swagger：`http://localhost:8000/docs`
 
 ---
 
