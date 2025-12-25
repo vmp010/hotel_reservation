@@ -177,7 +177,8 @@ async def get_user_booking_history(db:db_dependency,
             check_in=c_in_obj,
             check_out=c_out_obj,
             total_price=total_price, # 算好的總價
-            is_active=booking.is_active
+            is_active=booking.is_active,
+            hotel_is_activate=hotel.is_activate
         ))
         
     return results
