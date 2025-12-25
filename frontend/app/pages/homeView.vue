@@ -5,7 +5,7 @@
         
         <div v-if="!isOwner" class="card p-3 shadow-sm mb-4">
           <h5 class="fw-bold mb-3">🔍 搜尋條件</h5> <div class="mb-3">
-              <label class="form-label small text-muted">目的地 / 飯店名稱</label>
+              <label class="form-label small text-muted">目的地(縣市)</label>
               <div class="input-group">
                   <span class="input-group-text bg-white"><i class="bi bi-geo-alt"></i></span>
                   <input 

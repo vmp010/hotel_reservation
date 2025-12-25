@@ -311,7 +311,12 @@ const updateEmail = async () => {
 
     isUpdatingEmail.value = true;
     try {
-        await $fetch(`${apiBase}/users/update_email`, { // 假設後端有這支 API
+        // 🚀 修改重點：動態決定 API 路徑
+        const endpoint = userState.value.role === 'owner' 
+            ? '/owner/update_email' 
+            : '/users/update_email';
+
+        await $fetch(`${apiBase}${endpoint}`, { 
             method: 'PUT',
             body: { new_email: profileForm.value.newEmail },
             credentials: 'include'
@@ -338,7 +343,12 @@ const updatePassword = async () => {
     }
     isUpdatingPassword.value = true;
     try {
-        await $fetch(`${apiBase}/users/update_password`, { // 假設後端有這支 API
+        // 🚀 修改重點：動態決定 API 路徑
+        const endpoint = userState.value.role === 'owner' 
+            ? '/owner/update_password' 
+            : '/users/update_password';
+
+        await $fetch(`${apiBase}${endpoint}`, { 
             method: 'PUT',
             body: {
                 old_password: passwordForm.value.oldPassword,
@@ -349,7 +359,7 @@ const updatePassword = async () => {
 
         await Swal.fire('成功', '密碼已變更，請重新登入', 'success');
         
-        // 登出流程 (因為改密碼通常會讓 Token 失效)
+        // 登出流程 (不管是 Owner 還是 User，改密碼後都強制登出比較安全)
         const { performLogoutCleanup } = await import('~/composables/useAuth');
         await performLogoutCleanup();
 
