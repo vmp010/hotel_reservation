@@ -125,7 +125,7 @@ async def get_my_booking(
             check_out=c_out_obj,
             total_price=total_price, # 算好的總價
             is_active=booking.is_active,
-            hotel_is_active=hotel.is_activate
+            hotel_is_activate=hotel.is_activate
         ))
         
     return results
