@@ -7,11 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.sql import func
 import auth
 from auth import get_current_user,get_current_owner
-from routers import carts, hotels, booking,reviews,user
+from routers import carts, hotels, booking,reviews,user,owner
 
 app = FastAPI()
 app.include_router(auth.router)
 app.include_router(user.router)
+app.include_router(owner.router)
 
 app.include_router(carts.router)
 
