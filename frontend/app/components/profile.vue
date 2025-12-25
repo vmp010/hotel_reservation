@@ -15,7 +15,7 @@
           <h4 class="mb-1">{{ userState.username || '無用戶名' }}</h4>
           <p class="text-muted mb-3">{{ userState.email || '無電子郵件' }}</p>
           <hr />
-          <div class="text-start px-2 mb-3">
+          <!-- <div class="text-start px-2 mb-3">
             <p class="mb-1"><strong>角色：</strong>
                 <span :class="userState.role === 'owner' ? 'text-primary fw-bold' : ''">
                     {{ userState.role === 'owner' ? '飯店業者' : '一般用戶' }}
@@ -25,7 +25,7 @@
             <p class="mb-1"><strong>生日：</strong>{{ userState.birthday || '2000/01/01' }}</p>
             <p class="mb-1"><strong>地址：</strong>{{ userState.address || '台北市中正區' }}</p>
           </div>
-          <hr />
+          <hr /> -->
           
           <div class="d-grid gap-2">
             <button 
@@ -74,19 +74,19 @@
             <div class="row g-3 mb-4">
                 <div class="col-md-6">
                     <div class="card bg-primary text-white h-100 border-0 shadow-sm">
-                        <div class="card-body text-center p-4">
+                        <div class="card-body text-center p-2">
                             <i class="bi bi-building display-4 opacity-50"></i>
-                            <h2 class="display-5 fw-bold mt-2">{{ myHotels?.length || 0 }}</h2>
+                            <h2 class="display-8 fw-bold">{{ myHotels?.length || 0 }}</h2>
                             <p class="card-text text-white-50">擁有飯店數</p>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6">
                   <div class="card bg-success text-white h-100 border-0 shadow-sm">
-                      <div class="card-body text-center p-4">
+                      <div class="card-body text-center p-2">
                           <i class="bi bi-calendar-check display-4 opacity-50"></i>
                           
-                          <h2 class="display-5 fw-bold mt-2">{{ paidBookingsCount }}</h2>
+                          <h2 class="display-8 fw-bold">{{ paidBookingsCount }}</h2>
                           
                           <p class="card-text text-white-50">有效訂單數 (已付款)</p>
                       </div>
