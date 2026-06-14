@@ -22,7 +22,10 @@ app.include_router(booking.router)
 app.include_router(reviews.router)
 
 
+import os
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 origins = [
+    FRONTEND_URL,
     "http://localhost:3000",
     "http://127.0.0.1:3000"
 ]

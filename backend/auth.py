@@ -16,10 +16,13 @@ router=APIRouter(
     prefix="/auth",
       tags=["auth"])
 
-SECRET_KEY ="b8a54b0685e4d1f044931b6c6eb34e58"
-ALGORITHM ="HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES =30
-REFRESH_TOKEN_EXPIRE_DAYS =7
+import os
+
+SECRET_KEY = os.getenv("SECRET_KEY", "b8a54b0685e4d1f044931b6c6eb34e58")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+IS_PRODUCTION = os.getenv("IS_PRODUCTION", "false").lower() == "true"
 
 bcrypt_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
 
@@ -183,7 +186,7 @@ async def login_for_access_token(
         httponly=True,
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         samesite="lax",
-        secure=False  # 上線改 True
+        secure=IS_PRODUCTION
     )
 
     # 2. Refresh Token (長效，限制路徑)
@@ -193,8 +196,8 @@ async def login_for_access_token(
         httponly=True,
         max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
         samesite="lax",
-        secure=False, # 上線改 True
-        path="/auth/refresh" # 🔥 安全關鍵：只有換票 API 能讀到這個 Cookie
+        secure=IS_PRODUCTION,
+        path="/auth/refresh"
     )
 
     return {"message": "Login successful", "role": role}
@@ -238,7 +241,7 @@ async def refresh_access_token(request:Request, response: Response, db: db_depen
             httponly=True,
             max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             samesite="lax",
-            secure=False  # 上線改 True
+            secure=IS_PRODUCTION
         )
         return {"message":"Access token refreshed"}
     except JWTError:

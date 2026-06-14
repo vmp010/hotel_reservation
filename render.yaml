@@ -1,0 +1,50 @@
+services:
+  - type: web
+    name: hotel-backend
+    runtime: python
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////data/hotel_reservation.db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+      - key: REFRESH_TOKEN_EXPIRE_DAYS
+        value: "7"
+      - key: IS_PRODUCTION
+        value: "true"
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: hotel-frontend
+          property: url
+    disk:
+      name: sqlite-data
+      mountPath: /data
+      sizeGB: 1
+
+  - type: web
+    name: hotel-frontend
+    runtime: node
+    region: singapore
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NUXT_PUBLIC_API_BASE
+        fromService:
+          type: web
+          name: hotel-backend
+          property: url
+      - key: NITRO_PORT
+        value: "10000"
+      - key: NITRO_HOST
+        value: "0.0.0.0"
